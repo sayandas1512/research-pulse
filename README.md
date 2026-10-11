@@ -1,36 +1,91 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Research Pulse
 
-## Getting Started
+An AI-powered weekly research monitor built for the MESA Cohort C4 "AI and its Applications" exam.
+It watches 8 (adjustable) arXiv research domains, cuts volume with cheap deterministic signals,
+judges the shortlist with one Gemini Flash call per domain, and emails a brief every Monday
+morning — short enough to read in under ten minutes — with a parallel web archive.
 
-First, run the development server:
+## Architecture
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Vercel Cron (Mon 02:00 UTC) / "Run now" button
+        |
+  Orchestrator  (idempotent per ISO week; time-budgeted; resumable)
+        |  for each active domain, sequentially:
+        |-- Fetch    arXiv API, last 7 days, categories + keywords, dedupe
+        |-- Enrich   HF Daily Papers (upvotes), GitHub (stars), Semantic Scholar (authors), venue regex
+        |-- Rank     deterministic score -> top ~12 (percentile signals, weight redistribution)
+        |-- Judge    Gemini Flash, ONE call per domain, structured JSON, Zod-validated
+        |-- Select   2-3 picks above threshold, or "nothing significant"
+        |
+  Headline (Gemini Flash, one call)  ->  Render (HTML email + archive page)
+        |
+  Persist brief FIRST  ->  Send email (Resend)  ->  Alert owner on any failure
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Stack: Next.js 16 (App Router) + TypeScript strict on Vercel Hobby; Neon Postgres (Drizzle ORM);
+`@google/genai` (Gemini); `resend` (email, with an SMTP/nodemailer fallback adapter); `zod`;
+`fast-xml-parser`; `vitest`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup (local development)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. `npm install`
+2. Copy `.env.example` to `.env.local` and fill in the values (see below).
+3. `npm run db:migrate` — applies the Drizzle schema to your Postgres database.
+4. `npm run db:seed` — inserts the 8 starter domains.
+5. `npm run dev` — starts the app at `http://localhost:3000`.
 
-## Learn More
+### Environment variables
 
-To learn more about Next.js, take a look at the following resources:
+See `.env.example` for the full list. The ones you must obtain yourself:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `GEMINI_API_KEY` — free key from [Google AI Studio](https://aistudio.google.com/apikey).
+  `GEMINI_MODEL` is resolved once at setup time (see `docs/SPIKES.md`) rather than hard-coded,
+  since Google ships new Flash versions regularly.
+- `DATABASE_URL` — a Neon Postgres pooled connection string (free tier).
+- `RESEND_API_KEY` — free key from [resend.com](https://resend.com). Note: Resend's free tier can
+  only send to the account owner's own verified email unless you verify a custom domain — see
+  `docs/SPIKES.md` (S5) and `docs/DECISIONS.md` for how this project worked around that.
+- `KAVITA_EMAIL`, `ALERT_EMAIL`, `CONTACT_EMAIL` — recipient addresses.
+- `CRON_SECRET`, `SESSION_SECRET`, `FEEDBACK_HMAC_SECRET` — random secrets (generate your own;
+  `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
+- `ADMIN_PASSWORD` — the shared password for `/settings`, `/log`, `/runs`, `/backtest`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## How a grader tests this
 
-## Deploy on Vercel
+1. **Public pages** (no login): `/` (what this is + latest brief link), `/archive` (past briefs),
+   `/brief/[isoWeek]` (a specific brief).
+2. **Admin pages** (login at `/login` with the demo password below):
+   - `/settings` — add, edit, reorder, (de)activate domains. Try **"Draft with Gemini"**: describe
+     a domain in plain English and it drafts categories/keywords/a significance note for you to
+     review before saving — then **"Preview this domain"** to see real ranked results for it with
+     no code change.
+   - `/runs` — run health (funnel counts per domain, failures) and a **Run now** button.
+3. **Testing the weekly cron without waiting for Monday**: production cron fires every Monday at
+   02:00 UTC (`vercel.json`), but the orchestrator itself is day-agnostic — its window is always
+   "the 7 days before whenever it's triggered," and idempotency keys off the ISO week, not the day
+   of the week it ran. Click **Run now** on `/runs` at any time to trigger a real run for the
+   current week; `/runs` also shows the next scheduled cron time so you can confirm the real
+   schedule is wired up even though you tested on demand.
+4. **Demo admin password**: see the submission notes / ask the project owner (not committed here).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Verifying "no Claude or other LLM at runtime"
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+grep -rn "anthropic\|claude\|openai\|OPENAI" src/ app/ scripts/ --include="*.ts" --include="*.tsx"
+```
+
+Every AI call in runtime code goes through `src/lib/gemini.ts` (`@google/genai`, model from
+`GEMINI_MODEL`).
+
+## Project docs
+
+- `docs/SPIKES.md` — Stage 0 verification of every live external service used.
+- `docs/DECISIONS.md` — running log of decisions, reasons, and rejected alternatives.
+- `docs/AS_BUILT.md` — component-map status (shipped / changed / dropped) once the build is done.
+- `docs/BACKTEST.md` — backtest results against the past four weeks (Stage 4).
+
+## Out of scope
+
+No vector database, agent framework, chat interface, scraping, paid APIs, multi-user accounts,
+or client-facing writing. Papers are never labeled "validated."

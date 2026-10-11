@@ -1,0 +1,33 @@
+# As-Built Component Map
+
+Status of each component-map step from `BUILD_BRIEF.md` section 13, as actually shipped.
+Updated at the end of each stage.
+
+| # | Component | Status | Notes |
+|---|---|---|---|
+| 01 | Settings with Gemini domain drafting | Shipped | `/settings`: CRUD, reorder, active toggle, "Draft with Gemini" (validated against the arXiv category whitelist), "Preview this domain" |
+| 02 | Cron and Run-now | Shipped | `vercel.json` cron `0 2 * * 1` → `/api/cron/weekly` (Bearer `$CRON_SECRET`); `/runs` "Run now" button → `/api/admin/run` (same orchestrator, `trigger: manual`) |
+| 03 | Domains table | Shipped | Drizzle schema, migrated to Neon, seeded with 8 domains |
+| 04 | Sources (arXiv, HF, Semantic Scholar, GitHub) | Shipped | `src/lib/{arxiv,hf,scholar,github}.ts`; verified live in Stage 0 spikes |
+| 05 | Fetcher | Shipped | `src/lib/arxiv.ts`: category+keyword+date-range query builder, pagination capped at 150/domain, exclude-keyword filter, global 3s rate limiter |
+| 06 | Ranker | Shipped | `src/lib/scoring.ts`: percentile-ranked signals, automatic weight redistribution when a signal has <10% coverage in a domain |
+| 07 | Rubric and context | Shipped | `content/significance.md`, refined after real Stage 1 output (domain-scope anchor, tie-break rule) |
+| 08 | Gemini judging | Shipped | `src/lib/gemini.ts`: one structured-output call per domain, Zod-validated, one repair retry on invalid JSON, ranked-list fallback on persistent failure |
+| 09 | Selection and word budget | Shipped | `src/lib/select.ts` (threshold/cap/cross-domain dedupe), `src/lib/render.ts` `applyWordBudget` (drops lowest-significance picks globally until under ~1,800 words) |
+| 10 | Gemini headline | Shipped | `src/lib/gemini.ts` `generateHeadline`, one call per run, fed only the final picks |
+| 11 | Brief render | Shipped | `src/lib/render.ts`: inline-CSS HTML email (~600px); `/brief/[isoWeek]` archive page reads the same `briefs`/`brief_items` rows and renders its own React markup |
+| 12 | Email send | Shipped | `src/lib/mailer.ts`: Resend adapter (default) + SMTP/nodemailer fallback adapter, one retry |
+| 13 | Alert email | Shipped | `src/lib/alerts.ts`, triggered on domain failure, zero-candidate domain, send failure, or run error |
+| 14 | Archive with feedback buttons, log and CSV | Partial | Archive + brief pages shipped (Stage 3); feedback buttons, `/log`, CSV export are Stage 4 |
+| 15 | Reader | Shipped | `/` (what this is + latest brief), `/archive` (list), `/brief/[isoWeek]` (detail) — all public, read-only |
+| 16 | Paper log storage | Shipped (storage) / Partial (UI) | `papers` table upserted on every fetch; `/log` browsing UI is Stage 4 |
+| 17 | Run-health page | Shipped | `/runs`: per-run funnel totals, failed-domain errors, next scheduled cron time, Run now / Force re-run |
+| 18 | Backtest | Not yet | Stage 4 |
+
+## Known deviations from the brief (see `docs/DECISIONS.md` for full reasoning)
+
+- `KAVITA_EMAIL`/`ALERT_EMAIL` point at the Resend account owner's address, not the originally
+  named address, due to Resend's free-tier sending restriction.
+- GitHub repo is private (user's explicit choice, overriding the brief's public default).
+- Admin password is a weak user-chosen value (acceptable given the low stakes of the admin pages).
+- `middleware.ts` renamed to `proxy.ts` per a Next.js 16 convention change.

@@ -95,6 +95,7 @@ export const candidates = pgTable(
     rankScore: real("rank_score").notNull(),
     rank: integer("rank").notNull(),
     shortlisted: boolean("shortlisted").notNull().default(false),
+    verdict: jsonb("verdict").$type<Record<string, unknown>>(),
   },
   (table) => [primaryKey({ columns: [table.runId, table.domainId, table.arxivId] })],
 );

@@ -96,6 +96,7 @@ export async function runDomainPipeline(
       shortlisted: shortlisted.length,
       picked: picks.length,
     },
+    allFetchedPapers: fetched,
     candidates: shortlisted,
     judged,
     picks,

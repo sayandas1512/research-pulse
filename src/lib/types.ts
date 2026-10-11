@@ -97,6 +97,7 @@ export interface SelectedPick extends JudgedCandidate {
 export interface DomainResult {
   domain: DomainConfig;
   funnel: DomainFunnel;
+  allFetchedPapers: Paper[];
   candidates: Candidate[];
   judged: JudgedCandidate[];
   picks: SelectedPick[];

@@ -141,3 +141,37 @@ papers), and ran "Preview this domain" — got a real funnel (fetched 20 → sho
 picked 0, with a sensible closest-miss) with no code or seed-file change. Deleted the test
 domain afterward via direct SQL so the database matches the documented 8 seed domains;
 the capability itself (not this specific domain) is the Stage 2 deliverable.
+
+## 2026-10-11 — Orchestrator design: finalize-from-persisted-state, not in-memory across invocations
+
+A resumable run can take multiple separate invocations (time-budget driven). The naive design
+(carry judged candidates in memory, finalize at the end of the same invocation that processes
+the last domain) breaks across invocations — each invocation only has the in-memory results of
+the domains *it* processed, not earlier ones. Fixed by persisting each candidate's verdict as a
+jsonb column (`candidates.verdict`) alongside its signals, and having `finalizeRun` always
+reconstruct every domain's judged candidates by reading `candidates` joined with `papers` from
+the database, regardless of which invocation produced them. This also made alert-worthiness
+(failed/zero-candidate/AI-unavailable domains) correct for free once fixed to match (see next
+entry) — it's computed from the full persisted run state rather than one invocation's local
+arrays. Rejected: keeping results in memory and relying on a single invocation completing the
+whole run — doesn't survive the realistic case (8 domains x arXiv rate limits x Gemini calls
+regularly exceeds a 260s budget, confirmed live).
+
+## 2026-10-11 — Found and fixed via live testing: brief upsert and invocation-scoped alerting
+
+Running the real orchestrator against live services (not just unit tests) surfaced two bugs
+that no amount of reading the code would have caught:
+1. `createBrief` did a plain `insert`, which violates `briefs.iso_week`'s unique constraint on
+   any `force` re-run of a week that already has a brief (crashed with a 500 mid-finalization).
+   Fixed with `onConflictDoUpdate` on `iso_week`, deleting and re-inserting `brief_items` (no
+   stable identity to diff against) rather than trying to merge old and new items.
+2. `hadIssues` (the decision to send a "run completed with issues" alert) was computed from
+   arrays local to the current invocation's for-loop. A forced re-run that resumed a run whose
+   domains were all already recorded (from an earlier, failed invocation) skipped the loop
+   entirely, so `failedDomains`/`zeroCandidateDomains` stayed empty even though every domain had
+   `aiAvailable: false` -- a real "Gemini key is broken, brief has zero picks" run that should
+   alert the owner silently didn't. Fixed by recomputing `failedDomains` and
+   `zeroCandidateDomains` from the full persisted `run_steps` for the run inside `finalizeRun`,
+   and adding `unavailableDomains.length > 0` to the alert condition. Both bugs are logged here
+   as the concrete reason this project treats "run it for real against live services" as part
+   of Stage 3's definition of done, not just unit tests passing.
