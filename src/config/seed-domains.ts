@@ -39,7 +39,7 @@ export const SEED_DOMAINS: Omit<DomainConfig, "id">[] = [
     description: "Defect detection, visual inspection, manufacturing CV.",
     arxivCategories: ["cs.CV", "eess.IV"],
     includeKeywords: ["industrial", "defect detection", "anomaly detection", "visual inspection", "manufacturing"],
-    excludeKeywords: [],
+    excludeKeywords: ["medical", "clinical", "satellite", "wildlife", "biopharma"],
     significanceNote:
       "Real production-line deployment, small-data regimes, real-defect datasets. Discount marginal gains on saturated benchmarks.",
     active: true,
@@ -49,7 +49,14 @@ export const SEED_DOMAINS: Omit<DomainConfig, "id">[] = [
     name: "LLM evaluation and benchmarks",
     description: "New benchmarks, contamination, LLM-as-a-judge.",
     arxivCategories: ["cs.CL", "cs.AI", "cs.LG"],
-    includeKeywords: ["benchmark", "evaluation", "contamination", "LLM-as-a-judge"],
+    includeKeywords: [
+      "new benchmark",
+      "benchmark reveals",
+      "evaluation protocol",
+      "LLM-as-a-judge",
+      "contamination",
+      "benchmark contamination",
+    ],
     excludeKeywords: [],
     significanceNote:
       "New benchmarks with validation, evidence that popular metrics mislead.",

@@ -77,3 +77,38 @@ multiple papers cluster near the threshold. Did not touch per-domain keywords/ex
 that's a Gate 1 conversation with the user (e.g., whether to add `exclude_keywords` like
 "medical", "satellite", "wildlife" to the CV-industrial domain), not something to decide
 unilaterally in the rubric.
+
+## 2026-10-11 — Tightened two seed domains' keywords/excludes after Gate 1 review
+
+Discussed with the user at Gate 1: "LLM evaluation and benchmarks" used bare `benchmark`/
+`evaluation` as include keywords, pulling 1,246 papers/week (vs. 13-539 for every other
+domain) because those words appear in abstracts across all of cs.AI regardless of topic.
+Replaced with multi-word phrases specific to *meta*-evaluation (`"new benchmark"`,
+`"benchmark reveals"`, `"evaluation protocol"`, `"LLM-as-a-judge"`, `"contamination"`,
+`"benchmark contamination"`) — volume dropped to 65/week, in line with other domains.
+Also added `exclude_keywords: ["medical", "clinical", "satellite", "wildlife", "biopharma"]`
+to "Computer vision for industrial applications" after observing it pull in off-topic papers
+(medical imaging, satellite earth-observation, wildlife camera traps) that matched the
+category/keyword filter but not the domain's actual intent — after-excludes count dropped
+from 13 to 8 for that domain in a live re-run. Rejected: leaving the exclude list empty and
+relying solely on the Judge's domain-scope rubric rule — the rule helps (correctly `skip`s
+most off-topic papers) but exclude keywords are cheaper (filter before spending a Gemini
+call's attention) and the brief's data model already has `exclude_keywords` for exactly
+this purpose.
+
+## 2026-10-11 — Cron schedule stays literally 0 2 * * 1 (Monday); testability via Run Now, not a schedule change
+
+User asked whether the Monday-morning cron requirement should be relaxed since a grader
+might review the submission on any day. Decided: no code/schedule change — `vercel.json`'s
+`0 2 * * 1` stays as the real production cron (a concrete, checkable requirement). The
+orchestrator itself is already day-agnostic: its window is `[run_time - 7 days, run_time)`
+and idempotency keys off the ISO week, not "was this triggered on a Monday" — so a manual
+trigger on any day of the week produces a correct brief for that week. The brief's own
+`/runs` page already specs a "Run now" button for exactly this. Action items for later
+stages: (1) `/runs` (Stage 3) should visibly show the next scheduled cron time and whether
+the last run was triggered by `cron` or `manual`, so a grader can see at a glance that the
+Monday schedule is real and wired up, even if they test via Run Now; (2) README (Stage 4)
+should explain this explicitly — "the cron fires Monday 02:00 UTC in production; to test
+on demand without waiting for Monday, use Run Now on /runs." Rejected: changing the cron
+to run more frequently "to make grading easier" — would misrepresent the actual production
+schedule the brief asks for.
