@@ -275,3 +275,21 @@ benefit from a bit of reasoning. Also added a live elapsed-seconds counter to th
 Run Now, and Backtest buttons (`/settings`, `/runs`, `/backtest`) so a grader watching "Running..."
 knows it's actually working, not stuck — these are the three actions that call the real pipeline
 synchronously and can take tens of seconds to several minutes.
+
+## 2026-10-12 — Real backtest recall run surfaced a genuine volume-cap tradeoff in high-volume domains
+
+Ran `/backtest` for "1 week ago" against a real known-important list (top 10 most-upvoted
+papers on Hugging Face Daily Papers for that week, used as a live proxy since no personal
+"papers I know mattered" list was available — see docs/BACKTEST.md). Recall was low
+(1/10 fetched, 0/10 shortlisted/picked). Diagnosed rather than dismissed: 3 of 10 were
+published before the window even started (HF's "date" is a feature date, not a submission
+date — not a pipeline issue). The other ~6-7 were in-window, in-category, and keyword-matching
+(verified directly against arXiv's own search API) but never appeared in `fetched` at all.
+Traced one example: "AI agents" alone matches 509 papers submitted *after* a Sept-30 paper
+within the same 7-day window, and our fetcher sorts by `submittedDate` descending capped at
+150 (`MAX_RESULTS_PER_DOMAIN`) — so a mid-week paper in a 500+/week domain gets silently
+pushed out by newer papers before ranking or judging ever sees it. "AI agents" fetched exactly
+150 (the cap) in all 4 weeks checked in this report, confirming it's volume-capped most weeks,
+not just this one. Not fixed unilaterally: raising the cap or switching from pure-recency to a
+window-sampling strategy both change core fetch behavior and cost (more arXiv calls), so this
+is flagged as a decision for the user rather than picked silently.

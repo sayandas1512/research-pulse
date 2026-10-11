@@ -1,6 +1,55 @@
 # Backtest Results — Past 4 Weeks
 
-Run date: 2026-10-11. No known-important-papers list was provided for this run (the brief's backtest feature accepts one; none was supplied for this report), so recall is reported as "not computed" at each level — this report instead verifies the backtest mechanism itself: that replaying a past week through the real pipeline (fetch → enrich → rank → judge → select, no email, no persistence) produces sensible funnel numbers for each of the last 4 weeks, across all 8 active domains.
+Run date: 2026-10-11/12. Two runs are documented here: a 4-week mechanism check with no
+known-important list, and a follow-up single-week run with a real list, both using the live
+`/backtest` pipeline (fetch → enrich → rank → judge → select, no email, no persistence).
+
+## Recall run: "1 week ago" against a real known-important list
+
+No one supplied a personal "papers I know mattered this week" list (this is a solo build, not
+an actual Kavita), so the known-important list used here is the **top 10 most-upvoted papers on
+Hugging Face Daily Papers** for the same window — a defensible live proxy for "papers the
+community considered significant," clearly not the same thing as a domain expert's judgment,
+but a real external signal rather than a fabricated list.
+
+Window: `2026-09-27T18:27:15Z` → `2026-10-04T18:27:15Z`
+
+| Level | Found | Recall |
+|---|---|---|
+| Fetched | 1/10 | 10% |
+| Shortlisted | 0/10 | 0% |
+| Picked | 0/10 | 0% |
+
+**This recall is low, and the reason is a real, diagnosed finding, not noise:**
+
+- **3 of the 10** known-important papers were actually published *before* the 7-day window
+  started (checked each one's real arXiv `<published>` date directly) — HF Daily Papers'
+  "date" reflects when HF *featured* a paper, not when it was submitted to arXiv, so some
+  HF-trending papers are days or weeks old by the time they trend. Not a pipeline bug; a
+  genuine mismatch between "trending this week" and "submitted this week."
+- **The other ~6–7** were published inside the window, in the right categories, and would
+  match the domain's keywords (verified directly against arXiv's search API — e.g.
+  `abs:"agent" OR ti:"agent"` does match "False Frontiers: ... Self-Evolving Search Agents"),
+  but never appeared in `fetched` at all. Root cause, traced for one example (`2609.39102`,
+  published Sept 30): the "AI agents" domain alone matches **509 papers** submitted *after*
+  it within the same window. Our fetcher sorts by `submittedDate` descending and caps at 150
+  per domain (`MAX_RESULTS_PER_DOMAIN`, matching the brief's "up to 150 per domain" spec) —
+  so a paper from the middle of a high-volume week gets silently pushed out by newer papers
+  before ranking or judging ever sees it. "AI agents" fetched exactly 150 (the cap) in every
+  week tested in this report, which is itself evidence the domain is volume-capped most weeks,
+  not just this one.
+
+**This is a real limitation worth a decision, not a bug to quietly patch here**: a pure
+recency cap trades off "catches everything recent" against "catches everything significant,"
+and for a domain this high-volume (500+/week before any ranking), recency alone may be too
+blunt a pre-filter. Two options worth discussing before changing it: (a) raise
+`MAX_RESULTS_PER_DOMAIN` for this domain specifically via `weight_overrides`-style per-domain
+config, accepting more arXiv API calls; or (b) sample across the window instead of taking the
+most-recent-150, so a paper from day 2 of a 7-day window isn't structurally disadvantaged
+against a paper from day 7. Not implemented here — flagging it for a decision rather than
+picking one unilaterally, since it changes core fetch behavior.
+
+## Mechanism check: past 4 weeks, no known-important list
 
 **This run caught a real bug**, left in the numbers below deliberately rather than quietly re-run:
 two domains in "2 weeks ago" show `0/0/0 (error: (text ?? "").replace is not a function)`. Cause:
