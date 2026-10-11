@@ -58,4 +58,25 @@ describe("parseAtomFeed", () => {
     const empty = `<feed xmlns="http://www.w3.org/2005/Atom"></feed>`;
     expect(parseAtomFeed(empty)).toEqual([]);
   });
+
+  it("does not crash when fast-xml-parser hands back a numeric-looking title/summary/comment (observed in production)", () => {
+    const numericLooking = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:arxiv="http://arxiv.org/schemas/atom">
+  <entry>
+    <id>http://arxiv.org/abs/2610.00001v1</id>
+    <updated>2026-10-01T00:00:00Z</updated>
+    <published>2026-10-01T00:00:00Z</published>
+    <title>2024</title>
+    <summary>42</summary>
+    <author><name>A. Author</name></author>
+    <arxiv:comment>7</arxiv:comment>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <arxiv:primary_category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+  </entry>
+</feed>`;
+    const [paper] = parseAtomFeed(numericLooking);
+    expect(paper.title).toBe("2024");
+    expect(paper.abstract).toBe("42");
+    expect(paper.comment).toBe("7");
+  });
 });

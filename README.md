@@ -66,8 +66,18 @@ to re-add from the project's git history if graded strictly against the brief's 
      a domain in plain English and it drafts categories/keywords/a significance note for you to
      review before saving — then **"Preview this domain"** to see real ranked results for it with
      no code change.
-   - `/runs` — run health (funnel counts per domain, failures) and a **Run now** button.
-3. **Testing the weekly cron without waiting for Monday**: production cron fires every Monday at
+   - `/runs` — run health (funnel counts per domain, failures), the useful-pick rate from recorded
+     feedback, and a **Run now** button.
+   - `/log` — every paper that has appeared in a brief, filterable by domain/action/week/saved-only,
+     with a CSV export button.
+   - `/backtest` — replay any of the last 1-4 weeks through the real pipeline (no email, no
+     persistence) and optionally measure recall against a list of papers you already know mattered
+     that week. `docs/BACKTEST.md` has a committed 4-week run.
+3. **Feedback loop**: every pick in the email and on `/brief/[isoWeek]` carries signed Useful /
+   Not relevant / Save-for-client links (`/api/feedback`, HMAC-signed, 180-day expiry, idempotent —
+   clicking twice doesn't double-count). Each brief page also has a "Missed this paper" form that
+   accepts a bare arXiv id or a full URL.
+4. **Testing the weekly cron without waiting for Monday**: production cron fires every Monday at
    02:00 UTC (`vercel.json`), but the orchestrator itself is day-agnostic — its window is always
    "the 7 days before whenever it's triggered," and idempotency keys off the ISO week, not the day
    of the week it ran. Click **Run now** on `/runs` at any time to trigger a real run for the

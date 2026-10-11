@@ -1,11 +1,18 @@
+import { buildFeedbackUrl } from "./feedback";
 import type { Action, DomainConfig, SelectedPick } from "./types";
 
 export const WORD_BUDGET = 1_800;
 const WORDS_PER_MINUTE = 230;
 
+/** A pick plus the brief_item id it will be persisted under, generated before insertion so the
+ * email HTML (rendered and saved before the DB write) can embed real, working feedback links. */
+export interface RenderPick extends SelectedPick {
+  itemId: string;
+}
+
 export interface DomainBriefSection {
   domain: DomainConfig;
-  picks: SelectedPick[];
+  picks: RenderPick[];
   closestMissTitle: string | null;
   scanned: number;
   shortlisted: number;
@@ -18,6 +25,7 @@ export interface BriefData {
   sections: DomainBriefSection[];
   unavailableDomains: string[];
   appUrl: string;
+  feedbackSecret?: string;
 }
 
 function escapeHtml(text: string): string {
@@ -45,7 +53,19 @@ function chip(label: string): string {
   return `<span style="display:inline-block;background:#f1f1f1;color:#444;border-radius:4px;padding:2px 6px;font-size:11px;margin-right:4px;">${escapeHtml(label)}</span>`;
 }
 
-function renderPick(pick: SelectedPick): string {
+async function renderFeedbackLinks(pick: RenderPick, appUrl: string, secret?: string): Promise<string> {
+  if (!secret) return "";
+  const [useful, notRelevant, saved] = await Promise.all([
+    buildFeedbackUrl(appUrl, pick.itemId, "useful", secret),
+    buildFeedbackUrl(appUrl, pick.itemId, "not_relevant", secret),
+    buildFeedbackUrl(appUrl, pick.itemId, "saved", secret),
+  ]);
+  const btn = (href: string, label: string) =>
+    `<a href="${href}" style="display:inline-block;border:1px solid #ddd;border-radius:4px;padding:3px 8px;font-size:11px;color:#444;text-decoration:none;margin-right:4px;">${escapeHtml(label)}</a>`;
+  return `<div style="margin-top:8px;">${btn(useful, "Useful")}${btn(notRelevant, "Not relevant")}${btn(saved, "Save for client")}</div>`;
+}
+
+async function renderPick(pick: RenderPick, appUrl: string, secret?: string): Promise<string> {
   const verdict = pick.verdict;
   const chips: string[] = [];
   if (pick.signals.hfUpvotes) chips.push(`${pick.signals.hfUpvotes} HF upvotes`);
@@ -53,6 +73,7 @@ function renderPick(pick: SelectedPick): string {
   if (pick.signals.venueHint) chips.push("venue noted");
   const authors = pick.paper.authors.slice(0, 3).join(", ") + (pick.paper.authors.length > 3 ? " et al." : "");
   const alsoIn = pick.alsoInDomains.length > 0 ? ` <span style="color:#888;">(also in ${escapeHtml(pick.alsoInDomains.join(", "))})</span>` : "";
+  const feedbackLinks = await renderFeedbackLinks(pick, appUrl, secret);
 
   return `
     <tr><td style="padding:10px 0;border-top:1px solid #eee;">
@@ -63,10 +84,11 @@ function renderPick(pick: SelectedPick): string {
       <p style="font-size:14px;color:#222;margin:6px 0 2px;">${escapeHtml(verdict.soWhat)}</p>
       <p style="font-size:12px;color:#999;margin:0 0 6px;">Caveat: ${escapeHtml(verdict.caveat)}</p>
       <span style="display:inline-block;background:#111;color:#fff;border-radius:4px;padding:3px 8px;font-size:12px;">${escapeHtml(ACTION_LABEL[verdict.action])}</span>
+      ${feedbackLinks}
     </td></tr>`;
 }
 
-function renderSection(section: DomainBriefSection): string {
+async function renderSection(section: DomainBriefSection, appUrl: string, secret?: string): Promise<string> {
   const header = `
     <tr><td style="padding:18px 0 4px;">
       <h2 style="font-size:16px;margin:0;color:#111;">${escapeHtml(section.domain.name)}</h2>
@@ -84,17 +106,19 @@ function renderSection(section: DomainBriefSection): string {
     return `${header}<tr><td style="padding:4px 0;font-size:13px;color:#777;">Nothing significant this week.${miss}</td></tr>`;
   }
 
-  return header + section.picks.map((p) => renderPick(p)).join("");
+  const picksHtml = await Promise.all(section.picks.map((p) => renderPick(p, appUrl, secret)));
+  return header + picksHtml.join("");
 }
 
-export function renderBriefHtml(data: BriefData): { html: string; wordCount: number } {
+export async function renderBriefHtml(data: BriefData): Promise<{ html: string; wordCount: number }> {
+  const sectionsHtml = await Promise.all(data.sections.map((s) => renderSection(s, data.appUrl, data.feedbackSecret)));
   const bodyRows = [
     data.headline
       ? `<tr><td style="padding:0 0 16px;font-size:14px;color:#333;">${escapeHtml(data.headline)
           .split("\n")
           .join("<br/>")}</td></tr>`
       : "",
-    ...data.sections.map(renderSection),
+    ...sectionsHtml,
   ].join("");
 
   const unavailableNote =
@@ -147,15 +171,15 @@ export function readTimeMinutes(wordCount: number): number {
  * pick across all domains (not domain-local) and re-render, repeating until under
  * budget or there is nothing left to drop. Never pads — only removes.
  */
-export function applyWordBudget(
+export async function applyWordBudget(
   data: BriefData,
   budget = WORD_BUDGET,
-): { data: BriefData; html: string; wordCount: number; dropped: number } {
+): Promise<{ data: BriefData; html: string; wordCount: number; dropped: number }> {
   let working = data;
   let dropped = 0;
 
   while (true) {
-    const { html, wordCount } = renderBriefHtml(working);
+    const { html, wordCount } = await renderBriefHtml(working);
     if (wordCount <= budget) return { data: working, html, wordCount, dropped };
 
     let lowestSection = -1;

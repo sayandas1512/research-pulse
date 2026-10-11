@@ -4,7 +4,7 @@ import { isoWeekKey, weeklyWindow } from "./iso-week";
 import { listDomains } from "./domains-repo";
 import { sendMail } from "./mailer";
 import { runDomainPipeline } from "./pipeline";
-import { applyWordBudget, type BriefData, type DomainBriefSection } from "./render";
+import { applyWordBudget, type BriefData, type DomainBriefSection, type RenderPick } from "./render";
 import { dedupeAcrossDomains, selectPicks } from "./select";
 import {
   createBrief,
@@ -21,7 +21,7 @@ import {
   updateRunStatus,
   upsertPapers,
 } from "./runs-repo";
-import type { DomainConfig, JudgedCandidate, JudgeVerdict, SelectedPick } from "./types";
+import type { DomainConfig, JudgedCandidate, JudgeVerdict } from "./types";
 
 /** Safety margin under Vercel's 300s maxDuration for this route. */
 const ORCHESTRATOR_BUDGET_MS = 260_000;
@@ -202,13 +202,14 @@ async function finalizeRun(
     judgedByDomain.set(row.domainId, list);
   }
 
-  const picksByDomainName = new Map<string, SelectedPick[]>();
+  const picksByDomainName = new Map<string, RenderPick[]>();
   const sections: DomainBriefSection[] = [];
   const unavailableDomains: string[] = [];
 
   for (const domain of allDomains) {
     const judged = judgedByDomain.get(domain.id) ?? [];
-    const { picks, closestMiss } = selectPicks(judged);
+    const { picks: selected, closestMiss } = selectPicks(judged);
+    const picks: RenderPick[] = selected.map((p) => ({ ...p, itemId: crypto.randomUUID() }));
     const step = stepByDomain.get(domain.id);
     const aiAvailable = step?.counts ? (step.counts as Record<string, number>).aiAvailable !== 0 : true;
     if (!aiAvailable) unavailableDomains.push(domain.name);
@@ -244,12 +245,14 @@ async function finalizeRun(
     sections,
     unavailableDomains,
     appUrl: options.appUrl,
+    feedbackSecret: process.env.FEEDBACK_HMAC_SECRET,
   };
 
-  const { html, wordCount } = applyWordBudget(briefData);
+  const { data: trimmedData, html, wordCount } = await applyWordBudget(briefData);
 
-  const items = sections.flatMap((section) =>
+  const items = trimmedData.sections.flatMap((section) =>
     section.picks.map((pick, idx) => ({
+      id: pick.itemId,
       domainId: section.domain.id,
       arxivId: pick.paper.arxivId,
       position: idx,

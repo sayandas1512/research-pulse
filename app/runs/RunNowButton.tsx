@@ -1,14 +1,23 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function RunNowButton() {
   const router = useRouter();
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!running) return;
+    const startedAt = Date.now();
+    const interval = setInterval(() => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    return () => clearInterval(interval);
+  }, [running]);
 
   async function handleClick(force: boolean) {
+    setElapsedSeconds(0);
     setRunning(true);
     setResult(null);
     const res = await fetch("/api/admin/run", {
@@ -23,23 +32,34 @@ export default function RunNowButton() {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <button
-        onClick={() => handleClick(false)}
-        disabled={running}
-        className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900"
-      >
-        {running ? "Running..." : "Run now"}
-      </button>
-      <button
-        onClick={() => handleClick(true)}
-        disabled={running}
-        title="Force a new run even if this week's brief was already sent"
-        className="rounded border border-gray-300 px-3 py-1.5 text-sm disabled:opacity-50 dark:border-gray-700"
-      >
-        Force re-run
-      </button>
-      {result && <span className="text-sm text-gray-500">{result}</span>}
+    <div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleClick(false)}
+          disabled={running}
+          title="Can take several minutes for all 8 domains — each one does a live arXiv fetch and a live Gemini call"
+          className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900"
+        >
+          {running ? `Running... ${elapsedSeconds}s` : "Run now"}
+        </button>
+        <button
+          onClick={() => handleClick(true)}
+          disabled={running}
+          title="Force a new run even if this week's brief was already sent"
+          className="rounded border border-gray-300 px-3 py-1.5 text-sm disabled:opacity-50 dark:border-gray-700"
+        >
+          Force re-run
+        </button>
+        {result && <span className="text-sm text-gray-500">{result}</span>}
+      </div>
+      {running && (
+        <p className="mt-2 text-xs text-gray-400">
+          Processing domains one at a time against live data — a full run across all 8 domains
+          typically takes several minutes. If it exceeds the time budget it will report
+          &quot;continuing&quot; and finish in a follow-up invocation automatically; refresh this
+          page in a bit to see progress.
+        </p>
+      )}
     </div>
   );
 }

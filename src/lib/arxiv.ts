@@ -41,8 +41,14 @@ function stripArxivId(rawId: string): string {
   return match ? match[1] : rawId;
 }
 
-function collapseWhitespace(text: string | undefined | null): string {
-  return (text ?? "").replace(/\s+/g, " ").trim();
+/**
+ * fast-xml-parser can hand back a non-string (e.g. a number) for tag content that looks
+ * numeric — observed in production on a title/abstract fragment that was all digits. Coerce
+ * defensively rather than assuming the parser always gives us a string.
+ */
+function collapseWhitespace(text: unknown): string {
+  if (text === null || text === undefined) return "";
+  return String(text).replace(/\s+/g, " ").trim();
 }
 
 function toArray<T>(value: T | T[] | undefined): T[] {

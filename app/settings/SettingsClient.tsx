@@ -190,6 +190,14 @@ export default function SettingsClient() {
 
   const [previewLoadingId, setPreviewLoadingId] = useState<string | null>(null);
   const [previewResults, setPreviewResults] = useState<Record<string, PreviewResult>>({});
+  const [previewElapsedSeconds, setPreviewElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!previewLoadingId) return;
+    const startedAt = Date.now();
+    const interval = setInterval(() => setPreviewElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000)), 1000);
+    return () => clearInterval(interval);
+  }, [previewLoadingId]);
 
   async function load() {
     setLoading(true);
@@ -306,6 +314,7 @@ export default function SettingsClient() {
   }
 
   async function handlePreview(domainId: string) {
+    setPreviewElapsedSeconds(0);
     setPreviewLoadingId(domainId);
     const res = await fetch("/api/admin/preview", {
       method: "POST",
@@ -433,15 +442,22 @@ export default function SettingsClient() {
                   <button
                     onClick={() => handlePreview(d.id)}
                     disabled={previewLoadingId === d.id}
+                    title="Fetches live arXiv data and runs a real Gemini judging call — typically takes 20-60s depending on the domain's paper volume"
                     className="rounded border border-gray-300 px-2 py-1 disabled:opacity-50 dark:border-gray-700"
                   >
-                    {previewLoadingId === d.id ? "Previewing..." : "Preview"}
+                    {previewLoadingId === d.id ? `Previewing... ${previewElapsedSeconds}s` : "Preview"}
                   </button>
                   <button onClick={() => handleDelete(d.id)} className="rounded border border-red-300 px-2 py-1 text-red-600 dark:border-red-800">
                     Delete
                   </button>
                 </div>
               </div>
+            )}
+            {previewLoadingId === d.id && (
+              <p className="mt-3 text-sm text-gray-500">
+                Running the real pipeline against live arXiv data, then a live Gemini call — this
+                can take 20-60s depending on how many papers this domain pulls in. ({previewElapsedSeconds}s elapsed)
+              </p>
             )}
             {previewResults[d.id] && <PreviewPanel result={previewResults[d.id]} />}
           </li>

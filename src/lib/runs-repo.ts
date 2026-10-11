@@ -149,6 +149,8 @@ export async function findBriefForWeek(isoWeek: string) {
 }
 
 export interface BriefItemInput {
+  /** Pre-generated so the email HTML (rendered before this insert) can embed working feedback links. */
+  id: string;
   domainId: string;
   arxivId: string;
   position: number;

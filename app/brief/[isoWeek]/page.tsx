@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getBriefWithItemsDetailed } from "@/src/lib/runs-repo";
 import { readTimeMinutes } from "@/src/lib/render";
+import FeedbackButtons from "./FeedbackButtons";
+import MissedPaperForm from "./MissedPaperForm";
 
 const ACTION_LABEL: Record<string, string> = {
   read: "Read",
@@ -52,6 +54,9 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
                   <span className="mt-2 inline-block rounded bg-gray-900 px-2 py-0.5 text-xs text-white dark:bg-gray-100 dark:text-gray-900">
                     {ACTION_LABEL[row.item.action] ?? row.item.action}
                   </span>
+                  <Suspense fallback={null}>
+                    <FeedbackButtons briefItemId={row.item.id} />
+                  </Suspense>
                 </li>
               ))}
             </ul>
@@ -60,7 +65,12 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
         {items.length === 0 && <p className="text-sm text-gray-500">No picks were significant this week.</p>}
       </div>
 
-      <p className="mt-10 border-t border-gray-100 pt-4 text-xs text-gray-400 dark:border-gray-800">
+      <div className="mt-10 border-t border-gray-100 pt-4 dark:border-gray-800">
+        <p className="text-sm font-medium">Missed something in this week&apos;s brief?</p>
+        <MissedPaperForm />
+      </div>
+
+      <p className="mt-6 text-xs text-gray-400">
         Preprints, not peer reviewed unless noted. Summaries are AI-generated from abstracts.
       </p>
     </>

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { listRuns, listRunSteps } from "@/src/lib/runs-repo";
+import { getFeedbackStats } from "@/src/lib/feedback-repo";
 import RunNowButton from "./RunNowButton";
 
 function nextMondayTwoAmUtc(from: Date): Date {
@@ -20,6 +21,21 @@ async function NextCronLine() {
       Production cron fires every Monday at 02:00 UTC ({nextCron.toISOString()} is next). Use{" "}
       <strong>Run now</strong> to trigger the pipeline on demand — same orchestrator, same idempotency,
       no need to wait for Monday.
+    </p>
+  );
+}
+
+async function FeedbackSummary() {
+  const stats = await getFeedbackStats();
+  return (
+    <p className="mt-4 text-sm text-gray-500">
+      Feedback: {stats.useful} useful, {stats.notRelevant} not relevant, {stats.saved} saved for client,{" "}
+      {stats.missed} reported missed.{" "}
+      {stats.usefulPickRate !== null ? (
+        <>Useful-pick rate: {(stats.usefulPickRate * 100).toFixed(0)}% (useful / (useful + not relevant)).</>
+      ) : (
+        <>Useful-pick rate: not enough feedback yet.</>
+      )}
     </p>
   );
 }
@@ -88,6 +104,10 @@ export default function RunsPage() {
       <div className="mt-4">
         <RunNowButton />
       </div>
+
+      <Suspense fallback={null}>
+        <FeedbackSummary />
+      </Suspense>
 
       <Suspense fallback={<p className="mt-6 text-sm text-gray-500">Loading...</p>}>
         <RunsList />

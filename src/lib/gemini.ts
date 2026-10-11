@@ -144,6 +144,11 @@ export async function judgeDomain(
             temperature: 0.2,
             responseMimeType: "application/json",
             responseSchema: RESPONSE_SCHEMA,
+            // Judging a short rubric against 12 structured summaries doesn't need the model's
+            // extended "thinking" — Stage 0 measured 476 thinking tokens vs. 73 output tokens on
+            // a single-paper test, which dominates latency. Disabling it cuts per-domain time
+            // noticeably; see docs/DECISIONS.md for the quality spot-check before keeping this.
+            thinkingConfig: { thinkingBudget: 0 },
           },
         });
         return response.text ?? "";

@@ -204,3 +204,74 @@ environments). `FEEDBACK_HMAC_SECRET` and `CRON_SECRET` are unaffected (unrelate
 login — feedback links and the cron endpoint have their own independent auth). All admin pages
 (`/settings`, `/runs`) are now public. Logged explicitly here and in the README so this reads
 as a documented, deliberate choice during grading, not a missed requirement.
+
+## 2026-10-11 — Feedback links: pre-generate brief_item ids so the email HTML can embed them
+
+The email HTML is rendered and saved to `briefs.html` *before* `brief_items` rows exist (brief
+rows are created in the same `createBrief` call that first produces their ids). But feedback
+links need to reference a `brief_item_id` that's stable and already valid by the time someone
+reads the email. Fixed by generating each pick's `itemId` with `crypto.randomUUID()` in the
+orchestrator before rendering, threading it through `render.ts` (new `RenderPick` type extends
+`SelectedPick`), and inserting `brief_items` with that same explicit id afterward (Drizzle allows
+overriding a `defaultRandom()` column by passing an explicit value). Also made
+`dedupeAcrossDomains` generic (`<T extends SelectedPick>`) so it preserves `itemId` through the
+cross-domain dedupe step instead of narrowing back to plain `SelectedPick`. Found and fixed a
+related latent bug while making this change: `applyWordBudget`'s returned (possibly-trimmed)
+`data` was previously discarded — `brief_items` were built from the original, un-trimmed
+`sections`, so a pick dropped for word-budget reasons could still end up in the DB (and get a
+feedback link) even though it wasn't in the email that was actually sent. Now uses
+`trimmedData.sections` for the `items` array.
+
+## 2026-10-11 — Feedback links are the same signed-link pattern everywhere, not admin-session POSTs
+
+The brief describes the archive page's feedback buttons as posting "with the admin session." That
+assumed admin auth existing; it's since been removed (see above). Rather than building a separate
+authenticated-POST code path for the archive page, both the email and `/brief/[isoWeek]` use the
+identical signed-GET-link pattern: the archive page just signs fresh tokens at render time (its
+`brief_item_id`s already exist in the DB by then, unlike the email). One mechanism, one code path,
+works identically whether the click comes from an email client or a browser tab.
+
+## 2026-10-11 — Backtest: no DB persistence, and the 4-week report has no known-important list
+
+`runBacktest` calls the same `runDomainPipeline` function the live orchestrator uses, but doesn't
+write to `runs`/`run_steps`/`candidates` — it's a pure replay-and-measure operation with no side
+effects, matching the brief's "no email" instruction extended to "no persistence" as well, since
+persisting a backtest run that's never going to be sent would just clutter `/runs` with entries
+that look like real weekly runs but aren't. Rejected: reusing the full orchestrator's persistence
+path with `type: 'backtest'` — the schema has that enum value ready if this needs to change later,
+but it adds bookkeeping (run_steps, candidates rows) for no benefit when the only output anyone
+reads is the recall numbers. The committed `docs/BACKTEST.md` (from `scripts/backtest-report.ts`)
+has no known-important-papers list, because none was provided by the user — it verifies the
+backtest *mechanism* (real funnel numbers across all 8 domains for each of the last 4 weeks) and
+documents how to get real recall numbers via `/backtest`'s UI once a list is available, rather
+than fabricating a list to make the report look more complete than it is.
+
+## 2026-10-11 — Found and fixed via the 4-week backtest run: arXiv parser crash on numeric-looking text
+
+Running `scripts/backtest-report.ts` for real (not just unit tests) against 4 actual past weeks
+surfaced a crash in `src/lib/arxiv.ts`'s `collapseWhitespace`: `fast-xml-parser` occasionally
+returns a non-string (a bare JS number) for a title/abstract/comment field whose text content
+happens to look numeric, and the function assumed its input was always a string, calling
+`.replace` on it directly. Two domains in the "2 weeks ago" backtest window hit this and failed
+cleanly (caught by `runBacktest`'s per-domain try/catch, reported as a domain error, didn't crash
+the run) — exactly the "one failed domain must never stop the others" behavior the brief asks
+for, which is reassuring, but the underlying bug still needed fixing. Fixed by coercing with
+`String(text)` before processing and widening the function's parameter type to `unknown` so this
+class of bug can't silently type-check again. Added a regression test. Kept the two zero-value
+rows in the committed `docs/BACKTEST.md` as evidence rather than quietly re-running the (very
+slow, ~40 minute) full 4-week report after the fix — see `docs/BACKTEST.md`'s own note.
+
+## 2026-10-11 — Disabled Gemini "thinking" for the Judge call to cut preview/run latency
+
+User asked why `/settings`' Preview button and the backtest report were slow, and whether
+latency could be reduced. Per the Stage 0 spike note flagged for Gate 1 revisit (`docs/SPIKES.md`
+S4: 476 thinking tokens vs. 73 output tokens on a single test call), set
+`thinkingConfig: { thinkingBudget: 0 }` on the Judge call in `src/lib/gemini.ts` — judging a
+short rubric against 12 structured paper summaries doesn't need extended reasoning, and this call
+runs once per domain (8x per full run), making it the actual per-domain bottleneck alongside the
+arXiv fetch. Left the Headline and Domain-draft calls untouched: both run once per full run (not
+per domain), so they're not the latency driver, and the Headline's cross-domain synthesis may
+benefit from a bit of reasoning. Also added a live elapsed-seconds counter to the Preview,
+Run Now, and Backtest buttons (`/settings`, `/runs`, `/backtest`) so a grader watching "Running..."
+knows it's actually working, not stuck — these are the three actions that call the real pipeline
+synchronously and can take tens of seconds to several minutes.

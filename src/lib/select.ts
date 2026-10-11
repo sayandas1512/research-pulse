@@ -41,9 +41,7 @@ export function selectPicks(
  * Cross-domain dedupe: a paper appearing in multiple domains' picks is kept only
  * under the domain where it scored highest, with an "also in" note on that pick.
  */
-export function dedupeAcrossDomains(
-  picksByDomain: Map<string, SelectedPick[]>,
-): Map<string, SelectedPick[]> {
+export function dedupeAcrossDomains<T extends SelectedPick>(picksByDomain: Map<string, T[]>): Map<string, T[]> {
   const bestDomainForPaper = new Map<string, { domainName: string; significance: number }>();
   for (const [domainName, picks] of picksByDomain) {
     for (const pick of picks) {
@@ -54,9 +52,9 @@ export function dedupeAcrossDomains(
     }
   }
 
-  const result = new Map<string, SelectedPick[]>();
+  const result = new Map<string, T[]>();
   for (const [domainName, picks] of picksByDomain) {
-    const kept: SelectedPick[] = [];
+    const kept: T[] = [];
     for (const pick of picks) {
       const best = bestDomainForPaper.get(pick.paper.arxivId);
       if (best?.domainName !== domainName) continue;
