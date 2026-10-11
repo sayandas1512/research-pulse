@@ -42,3 +42,38 @@ paper metadata) and the whole app runs on a free-tier demo deployment for an exa
 Chosen as the newest stable (non-preview, non-lite) Flash model available to the provided key
 at spike time (see `docs/SPIKES.md` S4). Rejected: `gemini-2.5-flash` (older, available but not
 newest) and any `-preview` suffixed Flash model (not stable).
+
+## 2026-10-11 — Rank-then-cap arXiv fetch at exactly MAX_RESULTS_PER_DOMAIN
+
+Initial pagination loop could overshoot the 150-per-domain cap by one full page (observed
+200 fetched for "AI agents" instead of 150) because the loop's `while` condition was only
+checked between pages, not after accumulating results. Fixed by slicing the accumulated
+array to the cap after the fetch loop, rather than trying to get the loop's exit condition
+exactly right mid-page. Rejected: tightening the loop condition to stop mid-page — more
+fragile against future pagination changes than a single post-fetch slice.
+
+## 2026-10-11 — @google/genai SDK over raw REST for the Judge/Headline calls
+
+Brief's stack section names `@google/genai`; used `GoogleGenAI.models.generateContent` with
+`responseSchema`/`responseMimeType` for structured output, matching what Stage 0's spike (S4)
+already verified works via raw REST. Rejected: keeping the raw `fetch`-based calls used in the
+spike — the SDK gives typed request/response shapes or free, and the brief explicitly asks
+for it in the stack.
+
+## 2026-10-11 — content/significance.md refined after first real pipeline run (Stage 1, Gate 1 prep)
+
+Running the full pipeline on two domains ("AI agents", "Computer vision for industrial
+applications") surfaced two real patterns: (1) the CV-industrial domain's broad categories/
+keywords (`anomaly detection`, `defect detection`) pull in off-topic papers (medical imaging,
+satellite earth-observation, wildlife camera traps) that score well on generic evidence
+quality but aren't relevant to industrial manufacturing — the model already discounted most
+of these via `action: skip`, but the rubric didn't explicitly say to penalize domain drift,
+so it was easy for an off-topic paper with strong execution to slip through on "evidence
+quality" alone; (2) three "AI agents" picks tied at exactly significance=7, bumping against
+the "at most 1-2 papers per domain score 7+" calibration guidance. Added two rubric lines:
+an explicit "domain scope" anchor (strong execution on the wrong problem isn't decision-
+relevant) and a tie-break preference for `evidence_strength: strong` over `moderate` when
+multiple papers cluster near the threshold. Did not touch per-domain keywords/excludes yet —
+that's a Gate 1 conversation with the user (e.g., whether to add `exclude_keywords` like
+"medical", "satellite", "wildlife" to the CV-industrial domain), not something to decide
+unilaterally in the rubric.
