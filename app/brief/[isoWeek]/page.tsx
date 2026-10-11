@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { getBriefWithItemsDetailed } from "@/src/lib/runs-repo";
+import { getBriefWithItemsDetailed, listRunSteps } from "@/src/lib/runs-repo";
 import { readTimeMinutes } from "@/src/lib/render";
 import FeedbackButtons from "./FeedbackButtons";
 import MissedPaperForm from "./MissedPaperForm";
@@ -24,6 +24,17 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
     byDomain.set(row.domainName, list);
   }
 
+  const steps = await listRunSteps(brief.runId);
+  const coverageByDomainId = new Map(
+    steps.map((s) => [s.domainId, (s.counts as Record<string, number> | null) ?? {}]),
+  );
+  const coverageByDomainName = new Map<string, { scanned: number; shortlisted: number }>();
+  for (const row of items) {
+    if (coverageByDomainName.has(row.domainName)) continue;
+    const counts = coverageByDomainId.get(row.item.domainId) ?? {};
+    coverageByDomainName.set(row.domainName, { scanned: counts.fetched ?? 0, shortlisted: counts.shortlisted ?? 0 });
+  }
+
   return (
     <>
       <h1 className="text-2xl font-semibold">Research Pulse — {isoWeek}</h1>
@@ -36,6 +47,10 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
         {[...byDomain.entries()].map(([domainName, rows]) => (
           <section key={domainName}>
             <h2 className="text-lg font-semibold">{domainName}</h2>
+            <p className="text-xs text-gray-400">
+              Scanned {coverageByDomainName.get(domainName)?.scanned ?? 0}, shortlisted{" "}
+              {coverageByDomainName.get(domainName)?.shortlisted ?? 0}, shown {rows.length}.
+            </p>
             <ul className="mt-2 space-y-4">
               {rows.map((row) => (
                 <li key={row.item.id} className="border-t border-gray-100 pt-3 dark:border-gray-800">
