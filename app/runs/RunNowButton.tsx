@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { buttonClass } from "../components/ui";
 
 export default function RunNowButton() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function RunNowButton() {
           onClick={() => handleClick(false)}
           disabled={running}
           title="Can take several minutes for all 8 domains — each one does a live arXiv fetch and a live Gemini call"
-          className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900"
+          className={buttonClass("primary")}
         >
           {running ? `Running... ${elapsedSeconds}s` : "Run now"}
         </button>
@@ -46,14 +47,14 @@ export default function RunNowButton() {
           onClick={() => handleClick(true)}
           disabled={running}
           title="Force a new run even if this week's brief was already sent"
-          className="rounded border border-gray-300 px-3 py-1.5 text-sm disabled:opacity-50 dark:border-gray-700"
+          className={buttonClass("secondary")}
         >
           Force re-run
         </button>
-        {result && <span className="text-sm text-gray-500">{result}</span>}
+        {result && <span className="text-sm text-[var(--muted)]">{result}</span>}
       </div>
       {running && (
-        <p className="mt-2 text-xs text-gray-400">
+        <p className="mt-2 text-xs text-[var(--muted)]">
           Processing domains one at a time against live data — a full run across all 8 domains
           typically takes several minutes. If it exceeds the time budget it will report
           &quot;continuing&quot; and finish in a follow-up invocation automatically; refresh this

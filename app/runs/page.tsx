@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { listRuns, listRunSteps } from "@/src/lib/runs-repo";
 import { getFeedbackStats } from "@/src/lib/feedback-repo";
+import { Badge, Card, EmptyState, PageHeader, PageShell } from "../components/ui";
 import RunNowButton from "./RunNowButton";
 
 function nextMondayTwoAmUtc(from: Date): Date {
@@ -17,10 +18,10 @@ async function NextCronLine() {
   await connection();
   const nextCron = nextMondayTwoAmUtc(new Date());
   return (
-    <p className="mt-1 text-sm text-gray-500">
+    <p className="text-sm text-[var(--muted)]">
       Production cron fires every Monday at 02:00 UTC ({nextCron.toISOString()} is next). Use{" "}
-      <strong>Run now</strong> to trigger the pipeline on demand — same orchestrator, same idempotency,
-      no need to wait for Monday.
+      <strong className="text-[var(--foreground)]">Run now</strong> to trigger the pipeline on demand —
+      same orchestrator, same idempotency, no need to wait for Monday.
     </p>
   );
 }
@@ -28,17 +29,26 @@ async function NextCronLine() {
 async function FeedbackSummary() {
   const stats = await getFeedbackStats();
   return (
-    <p className="mt-4 text-sm text-gray-500">
-      Feedback: {stats.useful} useful, {stats.notRelevant} not relevant, {stats.saved} saved for client,{" "}
-      {stats.missed} reported missed.{" "}
-      {stats.usefulPickRate !== null ? (
-        <>Useful-pick rate: {(stats.usefulPickRate * 100).toFixed(0)}% (useful / (useful + not relevant)).</>
-      ) : (
-        <>Useful-pick rate: not enough feedback yet.</>
-      )}
-    </p>
+    <Card className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+      <span className="text-[var(--foreground)]">
+        {stats.useful} useful · {stats.notRelevant} not relevant · {stats.saved} saved for client ·{" "}
+        {stats.missed} reported missed
+      </span>
+      <Badge tone="accent">
+        {stats.usefulPickRate !== null ? `${(stats.usefulPickRate * 100).toFixed(0)}% useful-pick rate` : "Not enough feedback yet"}
+      </Badge>
+    </Card>
   );
 }
+
+const RUN_STATUS_TONE = {
+  complete: "success",
+  running: "accent",
+  continuing: "warning",
+  partial: "warning",
+  failed: "danger",
+  queued: "neutral",
+} as const;
 
 async function RunsList() {
   const runs = await listRuns(20);
@@ -49,8 +59,10 @@ async function RunsList() {
     })),
   );
 
+  if (runsWithSteps.length === 0) return <EmptyState>No runs yet.</EmptyState>;
+
   return (
-    <ul className="mt-6 space-y-4">
+    <ul className="space-y-3">
       {runsWithSteps.map(({ run, steps }) => {
         const completeSteps = steps.filter((s) => s.status === "complete");
         const failedSteps = steps.filter((s) => s.status === "failed");
@@ -66,38 +78,42 @@ async function RunsList() {
         );
 
         return (
-          <li key={run.id} className="rounded border border-gray-200 p-3 text-sm dark:border-gray-800">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">
-                {run.isoWeek} — {run.status}{" "}
-                <span className="text-xs text-gray-400">
-                  ({run.trigger}, started {new Date(run.startedAt).toLocaleString()})
+          <li key={run.id}>
+            <Card>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-[var(--foreground)]">{run.isoWeek}</span>
+                  <Badge tone={RUN_STATUS_TONE[run.status as keyof typeof RUN_STATUS_TONE] ?? "neutral"}>
+                    {run.status}
+                  </Badge>
+                </div>
+                <span className="text-xs text-[var(--muted)]">
+                  {run.trigger}, started {new Date(run.startedAt).toLocaleString()}
                 </span>
-              </span>
-            </div>
-            <p className="mt-1 text-gray-500">
-              Domains complete: {completeSteps.length}/{steps.length || "?"} · fetched {totals.fetched} →
-              shortlisted {totals.shortlisted} → picked {totals.picked}
-            </p>
-            {failedSteps.length > 0 && (
-              <p className="mt-1 text-red-600">
-                Failed domains: {failedSteps.map((s) => s.error).filter(Boolean).join("; ")}
+              </div>
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                Domains complete: {completeSteps.length}/{steps.length || "?"} · fetched {totals.fetched} →
+                shortlisted {totals.shortlisted} → picked {totals.picked}
               </p>
-            )}
-            {run.error && <p className="mt-1 text-red-600">Run error: {run.error}</p>}
+              {failedSteps.length > 0 && (
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  Failed domains: {failedSteps.map((s) => s.error).filter(Boolean).join("; ")}
+                </p>
+              )}
+              {run.error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">Run error: {run.error}</p>}
+            </Card>
           </li>
         );
       })}
-      {runsWithSteps.length === 0 && <p className="text-sm text-gray-500">No runs yet.</p>}
     </ul>
   );
 }
 
 export default function RunsPage() {
   return (
-    <main className="mx-auto max-w-4xl flex-1 p-6">
-      <h1 className="text-2xl font-semibold">Run health</h1>
-      <Suspense fallback={<p className="mt-1 text-sm text-gray-500">Loading...</p>}>
+    <PageShell maxWidth="4xl">
+      <PageHeader title="Run health" />
+      <Suspense fallback={<p className="text-sm text-[var(--muted)]">Loading...</p>}>
         <NextCronLine />
       </Suspense>
 
@@ -109,9 +125,11 @@ export default function RunsPage() {
         <FeedbackSummary />
       </Suspense>
 
-      <Suspense fallback={<p className="mt-6 text-sm text-gray-500">Loading...</p>}>
-        <RunsList />
-      </Suspense>
-    </main>
+      <div className="mt-6">
+        <Suspense fallback={<p className="text-sm text-[var(--muted)]">Loading...</p>}>
+          <RunsList />
+        </Suspense>
+      </div>
+    </PageShell>
   );
 }
