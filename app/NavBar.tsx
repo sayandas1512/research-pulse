@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Logo } from "./components/Logo";
 
 const LINKS = [
   { href: "/archive", label: "Archive" },
@@ -14,9 +15,7 @@ const LINKS = [
 function Wordmark() {
   return (
     <Link href="/" className="mr-4 flex items-center gap-2 font-semibold text-[var(--foreground)]">
-      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--accent)] text-xs font-bold text-[var(--accent-foreground)]">
-        RP
-      </span>
+      <Logo size={24} />
       Research Pulse
     </Link>
   );

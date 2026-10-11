@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { listBriefs } from "@/src/lib/runs-repo";
-import { buttonClass, Card } from "./components/ui";
+import { Card } from "./components/ui";
+import { Logo } from "./components/Logo";
 
 async function LatestBriefCta() {
   const briefs = await listBriefs();
@@ -10,8 +11,12 @@ async function LatestBriefCta() {
 
   return (
     <>
-      <Link href={`/brief/${latest.isoWeek}`} className={buttonClass("primary", "w-full sm:w-auto")}>
+      <Link
+        href={`/brief/${latest.isoWeek}`}
+        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-[var(--accent)] to-indigo-700 px-4 py-2.5 text-sm font-medium text-[var(--accent-foreground)] shadow-lg shadow-[var(--accent)]/25 transition-all duration-150 hover:shadow-xl hover:shadow-[var(--accent)]/35 active:scale-[0.97] sm:w-auto"
+      >
         Read the latest brief ({latest.isoWeek})
+        <span aria-hidden>→</span>
       </Link>
       {briefs.length > 1 && (
         <Link href="/archive" className="mt-3 text-sm text-[var(--muted)] hover:text-[var(--accent)] hover:underline">
@@ -22,14 +27,25 @@ async function LatestBriefCta() {
   );
 }
 
+function PulseRings() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      <span className="absolute h-14 w-14 rounded-full border border-[var(--accent)] animate-pulse-ring" />
+      <span className="absolute h-14 w-14 rounded-full border border-[var(--accent)] animate-pulse-ring [animation-delay:0.9s]" />
+      <span className="absolute h-14 w-14 rounded-full border border-[var(--accent)] animate-pulse-ring [animation-delay:1.8s]" />
+    </div>
+  );
+}
+
 export default function HomePage() {
   return (
     <main className="flex flex-1 items-center justify-center px-6 py-16">
-      <Card className="w-full max-w-md animate-fade-in-up p-8 text-center">
-        <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent)] text-base font-bold text-[var(--accent-foreground)]">
-          RP
-        </span>
-        <h1 className="mt-4 text-2xl font-semibold tracking-tight">Research Pulse</h1>
+      <Card className="relative w-full max-w-md animate-fade-in-up overflow-hidden p-8 text-center">
+        <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
+          <PulseRings />
+          <Logo size={56} animated />
+        </div>
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight">Research Pulse</h1>
         <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
           A weekly AI-research brief, organized by domain, short enough to read in under ten
           minutes. Built for a senior AI-strategy consultant who needs to know what matters
