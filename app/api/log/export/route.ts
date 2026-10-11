@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   });
 
   const csv = toCsv(
-    ["isoWeek", "domain", "arxivId", "title", "significance", "paperType", "evidenceStrength", "action", "absUrl"],
+    ["isoWeek", "domain", "arxivId", "title", "significance", "paperType", "evidenceStrength", "action", "feedback", "absUrl"],
     rows.map((r) => [
       r.isoWeek,
       r.domainName,
@@ -21,6 +21,7 @@ export async function GET(request: Request) {
       r.item.paperType,
       r.item.evidenceStrength,
       r.item.action,
+      r.feedbackKinds.join("; "),
       r.paper.absUrl,
     ]),
   );

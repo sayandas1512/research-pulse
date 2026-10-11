@@ -77,8 +77,8 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
               </p>
             </div>
             <ul className="space-y-3">
-              {rows.map((row) => (
-                <li key={row.item.id}>
+              {rows.map((row, idx) => (
+                <li key={row.item.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(idx * 50, 300)}ms` }}>
                   <Card>
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <a

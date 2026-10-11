@@ -12,9 +12,9 @@ async function BriefList() {
 
   return (
     <ul className="space-y-3">
-      {briefs.map((b) => (
-        <li key={b.id}>
-          <Card className="flex items-center justify-between transition-colors hover:border-[var(--accent)]">
+      {briefs.map((b, idx) => (
+        <li key={b.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(idx * 40, 300)}ms` }}>
+          <Card className="flex items-center justify-between">
             <Link href={`/brief/${b.isoWeek}`} className="font-medium text-[var(--foreground)] hover:text-[var(--accent)]">
               {b.isoWeek}
             </Link>

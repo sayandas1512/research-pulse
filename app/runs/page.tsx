@@ -63,7 +63,7 @@ async function RunsList() {
 
   return (
     <ul className="space-y-3">
-      {runsWithSteps.map(({ run, steps }) => {
+      {runsWithSteps.map(({ run, steps }, idx) => {
         const completeSteps = steps.filter((s) => s.status === "complete");
         const failedSteps = steps.filter((s) => s.status === "failed");
         const totals = completeSteps.reduce(
@@ -78,7 +78,7 @@ async function RunsList() {
         );
 
         return (
-          <li key={run.id}>
+          <li key={run.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(idx * 40, 300)}ms` }}>
             <Card>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">

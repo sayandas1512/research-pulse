@@ -14,6 +14,9 @@ const SELECT_CLASS =
 
 const ACTION_TONE = { read: "accent", skim: "neutral", flag_for_client: "solid" } as const;
 
+const FEEDBACK_LABEL: Record<string, string> = { useful: "Useful", not_relevant: "Not relevant", saved: "Saved" };
+const FEEDBACK_TONE = { useful: "success", not_relevant: "danger", saved: "accent" } as const;
+
 async function LogFilters({ searchParams }: { searchParams: SearchParams }) {
   const [domains, weeks] = await Promise.all([listDomainOptions(), listIsoWeekOptions()]);
   return (
@@ -86,6 +89,7 @@ async function LogTable({ searchParams }: { searchParams: SearchParams }) {
             <th className="px-4 py-3">Title</th>
             <th className="px-4 py-3">Significance</th>
             <th className="px-4 py-3">Action</th>
+            <th className="px-4 py-3">Feedback</th>
           </tr>
         </thead>
         <tbody>
@@ -104,11 +108,21 @@ async function LogTable({ searchParams }: { searchParams: SearchParams }) {
                   {row.item.action}
                 </Badge>
               </td>
+              <td className="px-4 py-2.5">
+                <div className="flex flex-wrap gap-1">
+                  {row.feedbackKinds.length === 0 && <span className="text-xs text-[var(--muted)]">—</span>}
+                  {row.feedbackKinds.map((kind) => (
+                    <Badge key={kind} tone={FEEDBACK_TONE[kind as keyof typeof FEEDBACK_TONE] ?? "neutral"}>
+                      {FEEDBACK_LABEL[kind] ?? kind}
+                    </Badge>
+                  ))}
+                </div>
+              </td>
             </tr>
           ))}
           {rows.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-4 py-8 text-center text-[var(--muted)]">
+              <td colSpan={6} className="px-4 py-8 text-center text-[var(--muted)]">
                 No entries match these filters.
               </td>
             </tr>

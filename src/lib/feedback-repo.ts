@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { getDb } from "./db/client";
 import { briefItems, feedback, papers } from "./db/schema";
 import type { FeedbackKind } from "./feedback";
@@ -83,14 +83,25 @@ export async function listLogEntries(filters: LogFilters = {}) {
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(briefs.isoWeek), briefItems.position);
 
-  if (!filters.savedOnly) return rows;
+  const itemIds = rows.map((r) => r.item.id);
+  const feedbackRows =
+    itemIds.length > 0
+      ? await db
+          .select({ briefItemId: feedback.briefItemId, kind: feedback.kind })
+          .from(feedback)
+          .where(inArray(feedback.briefItemId, itemIds))
+      : [];
+  const feedbackByItemId = new Map<string, FeedbackKind[]>();
+  for (const f of feedbackRows) {
+    if (!f.briefItemId) continue;
+    const list = feedbackByItemId.get(f.briefItemId) ?? [];
+    list.push(f.kind);
+    feedbackByItemId.set(f.briefItemId, list);
+  }
+  const withFeedback = rows.map((r) => ({ ...r, feedbackKinds: feedbackByItemId.get(r.item.id) ?? [] }));
 
-  const savedArxivIds = new Set(
-    (await db.select({ arxivId: feedback.arxivId }).from(feedback).where(eq(feedback.kind, "saved"))).map(
-      (r) => r.arxivId,
-    ),
-  );
-  return rows.filter((r) => savedArxivIds.has(r.paper.arxivId));
+  if (!filters.savedOnly) return withFeedback;
+  return withFeedback.filter((r) => r.feedbackKinds.includes("saved"));
 }
 
 export async function listDomainOptions() {

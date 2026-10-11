@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 export function PageShell({ children, maxWidth = "3xl" }: { children: ReactNode; maxWidth?: "2xl" | "3xl" | "4xl" }) {
   const widths = { "2xl": "max-w-2xl", "3xl": "max-w-3xl", "4xl": "max-w-4xl" };
-  return <main className={`mx-auto w-full ${widths[maxWidth]} flex-1 px-6 py-10`}>{children}</main>;
+  return <main className={`mx-auto w-full ${widths[maxWidth]} flex-1 animate-fade-in-up px-6 py-10`}>{children}</main>;
 }
 
 export function PageHeader({ title, description }: { title: string; description?: ReactNode }) {
@@ -17,7 +17,7 @@ export function PageHeader({ title, description }: { title: string; description?
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm shadow-black/[0.02] ${className}`}
+      className={`rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm shadow-black/[0.02] transition-all duration-200 hover:border-[var(--accent)]/40 hover:shadow-md ${className}`}
     >
       {children}
     </div>
@@ -43,17 +43,19 @@ export function Badge({
   className?: string;
 }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeTones[tone]} ${className}`}>
+    <span
+      className={`inline-flex animate-fade-in items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${badgeTones[tone]} ${className}`}
+    >
       {children}
     </span>
   );
 }
 
 const buttonBase =
-  "inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none";
+  "inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all duration-150 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100";
 const buttonVariants = {
-  primary: "bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90",
-  secondary: "border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-muted)]",
+  primary: "bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 hover:shadow-md hover:shadow-[var(--accent)]/20",
+  secondary: "border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-muted)] hover:border-[var(--accent)]/40",
   ghost: "text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-muted)]",
   danger: "border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-500/10",
 };
