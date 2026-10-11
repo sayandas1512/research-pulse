@@ -29,5 +29,9 @@ Updated at the end of each stage.
 - `KAVITA_EMAIL`/`ALERT_EMAIL` point at the Resend account owner's address, not the originally
   named address, due to Resend's free-tier sending restriction.
 - GitHub repo is private (user's explicit choice, overriding the brief's public default).
-- Admin password is a weak user-chosen value (acceptable given the low stakes of the admin pages).
-- `middleware.ts` renamed to `proxy.ts` per a Next.js 16 convention change.
+- **Shared-password admin auth removed entirely** (not weakened — removed). The brief specifies
+  it; the user explicitly chose to drop it so a grader can reach `/settings` and `/runs` without
+  needing a password passed out of band. `/settings` and `/runs` are public in this deployment.
+- `middleware.ts` originally implemented this auth gate; both the file and the gate are gone
+  (not just renamed to `proxy.ts` — see the auth-removal decision above, which supersedes the
+  earlier `proxy.ts` rename entry).

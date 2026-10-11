@@ -187,3 +187,20 @@ redirects unauthenticated requests to `/login` (307); `/api/cron/weekly` with th
 connectivity, env vars, and idempotency all work on the real deployment, without spending a
 real Gemini/send cycle to prove it). Vercel cron `0 2 * * 1 -> /api/cron/weekly` confirmed
 registered via `vercel crons ls`.
+
+## 2026-10-11 — Removed shared-password admin auth entirely (deliberate deviation from the brief)
+
+The brief (section 8) specifies shared-password login gating `/settings`, `/log`, `/runs`,
+`/backtest`. Removed it entirely at the user's explicit request: the user was concerned a
+grader wouldn't have the password and would be unable to reach `/settings`/`/runs` to verify
+the "add a domain with no code change" and "Run now" requirements — both central to how this
+submission is graded. I proposed the brief-compliant middle ground first (keep auth, put the
+actual demo password in the README, which is literally what the brief's own grading checklist
+asks for — "how a grader tests it: demo password, Run now, how to add a domain"), but the user
+reaffirmed they want auth removed entirely after hearing that option. Deleted `src/lib/auth.ts`,
+`middleware.ts`/`proxy.ts`'s gating, `/login` page, `/api/login` route; removed `ADMIN_PASSWORD`
+and `SESSION_SECRET` from `.env.example`, `.env.local`, and Vercel's env (all three
+environments). `FEEDBACK_HMAC_SECRET` and `CRON_SECRET` are unaffected (unrelated to admin
+login — feedback links and the cron endpoint have their own independent auth). All admin pages
+(`/settings`, `/runs`) are now public. Logged explicitly here and in the README so this reads
+as a documented, deliberate choice during grading, not a missed requirement.

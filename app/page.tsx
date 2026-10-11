@@ -31,8 +31,8 @@ export default function HomePage() {
           <Link href="/archive" className="text-blue-700 hover:underline dark:text-blue-400">
             Browse the archive
           </Link>
-          <Link href="/login" className="text-gray-400 hover:underline">
-            Admin login
+          <Link href="/settings" className="text-gray-400 hover:underline">
+            Admin
           </Link>
         </div>
       </div>
