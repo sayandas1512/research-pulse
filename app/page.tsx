@@ -45,11 +45,13 @@ export default function HomePage() {
           <PulseRings />
           <Logo size={56} animated />
         </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight">Research Pulse</h1>
+        <span className="mt-5 inline-block rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent)]">
+          Welcome back, Kavita
+        </span>
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight">Research Pulse</h1>
         <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
-          A weekly AI-research brief, organized by domain, short enough to read in under ten
-          minutes. Built for a senior AI-strategy consultant who needs to know what matters
-          this week without reading every preprint herself.
+          Your weekly AI-research brief, organized by domain, short enough to read in under ten
+          minutes — what matters this week, without reading every preprint yourself.
         </p>
         <div className="mt-6 flex flex-col items-center">
           <Suspense fallback={<span className="text-sm text-[var(--muted)]">Loading...</span>}>
