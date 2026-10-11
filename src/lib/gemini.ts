@@ -70,7 +70,7 @@ function loadPrompts() {
 
 export const geminiCallLimiter = new RateLimiter(6_000); // <=10 calls/minute
 
-interface JudgeCallCounter {
+export interface JudgeCallCounter {
   count: number;
   max: number;
 }
@@ -245,4 +245,86 @@ export async function generateHeadline(
 
 export async function sleepBetweenDomains() {
   await sleep(0);
+}
+
+const ARXIV_CATEGORY_WHITELIST_PATTERN = /^(cs\.[A-Z]{2}|stat\.ML|eess\.[A-Z]{2}|math\.[A-Z]{2})$/;
+
+const DomainDraftSchema = z.object({
+  name: z.string(),
+  arxiv_categories: z.array(z.string()),
+  include_keywords: z.array(z.string()),
+  exclude_keywords: z.array(z.string()),
+  significance_note: z.string(),
+});
+
+const DOMAIN_DRAFT_RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    name: { type: Type.STRING },
+    arxiv_categories: { type: Type.ARRAY, items: { type: Type.STRING } },
+    include_keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+    exclude_keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+    significance_note: { type: Type.STRING },
+  },
+  required: ["name", "arxiv_categories", "include_keywords", "exclude_keywords", "significance_note"],
+};
+
+export interface DomainDraft {
+  name: string;
+  arxivCategories: string[];
+  includeKeywords: string[];
+  excludeKeywords: string[];
+  significanceNote: string;
+  rejectedCategories: string[];
+}
+
+export interface DomainDraftResult {
+  draft: DomainDraft | null;
+  aiAvailable: boolean;
+  error?: string;
+}
+
+export async function draftDomain(
+  description: string,
+  apiKey: string,
+  model: string,
+): Promise<DomainDraftResult> {
+  const prompt = readFileSync(path.join(CONTENT_DIR, "domain-draft.prompt.md"), "utf8");
+  const ai = new GoogleGenAI({ apiKey });
+  try {
+    const response = await withRetry(
+      () =>
+        ai.models.generateContent({
+          model,
+          contents: `Whitelist of allowed arxiv_categories prefixes: cs.*, stat.ML, eess.*, math.*\n\nDescription: ${description}`,
+          config: {
+            systemInstruction: prompt,
+            temperature: 0.4,
+            responseMimeType: "application/json",
+            responseSchema: DOMAIN_DRAFT_RESPONSE_SCHEMA,
+          },
+        }),
+      { retries: 2, baseDelayMs: 1_500, isRetryable: (e) => e instanceof Error && /429|503/.test(e.message) },
+    );
+    const json = JSON.parse(response.text ?? "");
+    const parsed = DomainDraftSchema.safeParse(json);
+    if (!parsed.success) {
+      return { draft: null, aiAvailable: false, error: "Draft response failed validation" };
+    }
+    const valid = parsed.data.arxiv_categories.filter((c) => ARXIV_CATEGORY_WHITELIST_PATTERN.test(c));
+    const rejected = parsed.data.arxiv_categories.filter((c) => !ARXIV_CATEGORY_WHITELIST_PATTERN.test(c));
+    return {
+      draft: {
+        name: parsed.data.name,
+        arxivCategories: valid,
+        includeKeywords: parsed.data.include_keywords,
+        excludeKeywords: parsed.data.exclude_keywords,
+        significanceNote: parsed.data.significance_note,
+        rejectedCategories: rejected,
+      },
+      aiAvailable: true,
+    };
+  } catch (error) {
+    return { draft: null, aiAvailable: false, error: error instanceof Error ? error.message : String(error) };
+  }
 }

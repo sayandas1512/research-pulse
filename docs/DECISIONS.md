@@ -112,3 +112,32 @@ should explain this explicitly — "the cron fires Monday 02:00 UTC in productio
 on demand without waiting for Monday, use Run Now on /runs." Rejected: changing the cron
 to run more frequently "to make grading easier" — would misrepresent the actual production
 schedule the brief asks for.
+
+## 2026-10-11 — Auth via Web Crypto (not node:crypto) so the same code works in middleware
+
+`src/lib/auth.ts` uses `crypto.subtle` (Web Crypto, available in both the Node and Edge
+runtimes) instead of `node:crypto`'s `createHmac`/`timingSafeEqual` for the session-token
+HMAC. Reason: `middleware.ts`/`proxy.ts` (Next's request-interception layer) needs to verify
+the session cookie, and `node:crypto` doesn't reliably work in the Edge runtime some Next.js
+deployments use for this file. Rejected: `node:crypto` + forcing a Node.js runtime for the
+proxy file — more fragile against future Next.js runtime defaults than just using a function
+that's valid in both.
+
+## 2026-10-11 — Renamed middleware.ts to proxy.ts
+
+`next build` warned that the `middleware.ts` file convention is deprecated in this Next.js
+version in favor of `proxy.ts` (same behavior, same `export async function proxy(request)`
+signature instead of `middleware(request)`). Renamed immediately rather than leaving a
+deprecation warning in a fresh Stage 2 build.
+
+## 2026-10-11 — Gate 2 verification: created a domain via "Draft with Gemini" and previewed it live, then deleted it
+
+To verify the Gate 2 requirement ("add a domain through the UI and preview it with real data,
+no code change") actually works rather than just reading as correct, logged into `/settings`,
+used "Draft with Gemini" with the description "on-device and edge deployment of LLMs," saved
+the resulting domain config (Gemini produced genuinely specific keywords and excludes, e.g.
+excluding "datacenter"/"GPU cluster" so edge papers aren't drowned out by cloud-inference
+papers), and ran "Preview this domain" — got a real funnel (fetched 20 → shortlisted 12 →
+picked 0, with a sensible closest-miss) with no code or seed-file change. Deleted the test
+domain afterward via direct SQL so the database matches the documented 8 seed domains;
+the capability itself (not this specific domain) is the Stage 2 deliverable.
