@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { buttonClass, Card } from "../components/ui";
 
 interface RecallLevel {
   found: number;
@@ -22,15 +23,18 @@ interface BacktestResult {
   recall: { fetched: RecallLevel; shortlisted: RecallLevel; picked: RecallLevel };
 }
 
+const INPUT_CLASS =
+  "rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]";
+
 function RecallRow({ label, level }: { label: string; level: RecallLevel }) {
   return (
-    <tr className="border-b border-gray-100 dark:border-gray-900">
-      <td className="py-1 pr-4">{label}</td>
-      <td className="py-1 pr-4">
+    <tr className="border-b border-[var(--border)] last:border-0">
+      <td className="py-2 pr-4 font-medium text-[var(--foreground)]">{label}</td>
+      <td className="py-2 pr-4 text-[var(--muted)]">
         {level.total === 0 ? "n/a (no known-important list)" : `${level.found}/${level.total}`}
       </td>
-      <td className="py-1 pr-4">{level.recall !== null ? `${(level.recall * 100).toFixed(0)}%` : "—"}</td>
-      <td className="py-1 text-xs text-gray-400">{level.missingIds.join(", ")}</td>
+      <td className="py-2 pr-4 text-[var(--foreground)]">{level.recall !== null ? `${(level.recall * 100).toFixed(0)}%` : "—"}</td>
+      <td className="py-2 text-xs text-[var(--muted)]">{level.missingIds.join(", ")}</td>
     </tr>
   );
 }
@@ -74,15 +78,11 @@ export default function BacktestClient() {
   }
 
   return (
-    <div className="mt-6">
-      <div className="flex flex-wrap items-end gap-3 text-sm">
-        <label className="flex flex-col gap-1">
+    <div>
+      <Card>
+        <label className="flex flex-col gap-1 text-sm text-[var(--muted)]">
           Weeks ago
-          <select
-            value={weeksAgo}
-            onChange={(e) => setWeeksAgo(Number(e.target.value))}
-            className="rounded border border-gray-300 px-2 py-1 dark:border-gray-700 dark:bg-gray-900"
-          >
+          <select value={weeksAgo} onChange={(e) => setWeeksAgo(Number(e.target.value))} className={`${INPUT_CLASS} w-fit`}>
             {[1, 2, 3, 4].map((n) => (
               <option key={n} value={n}>
                 {n} week{n > 1 ? "s" : ""} ago
@@ -90,39 +90,35 @@ export default function BacktestClient() {
             ))}
           </select>
         </label>
-      </div>
-      <label className="mt-3 flex flex-col gap-1 text-sm">
-        Known-important arXiv ids (optional, comma or newline separated)
-        <textarea
-          value={knownIds}
-          onChange={(e) => setKnownIds(e.target.value)}
-          rows={3}
-          placeholder="2610.12345, 2610.09876"
-          className="rounded border border-gray-300 px-2 py-1 dark:border-gray-700 dark:bg-gray-900"
-        />
-      </label>
-      <button
-        onClick={handleRun}
-        disabled={running}
-        className="mt-3 rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900"
-      >
-        {running ? `Running backtest... ${elapsedSeconds}s (8 domains, live arXiv + Gemini calls — can take several minutes)` : "Run backtest"}
-      </button>
+        <label className="mt-3 flex flex-col gap-1 text-sm text-[var(--muted)]">
+          Known-important arXiv ids (optional, comma or newline separated)
+          <textarea
+            value={knownIds}
+            onChange={(e) => setKnownIds(e.target.value)}
+            rows={3}
+            placeholder="2610.12345, 2610.09876"
+            className={INPUT_CLASS}
+          />
+        </label>
+        <button onClick={handleRun} disabled={running} className={buttonClass("primary", "mt-3")}>
+          {running ? `Running backtest... ${elapsedSeconds}s (8 domains, live arXiv + Gemini calls — can take several minutes)` : "Run backtest"}
+        </button>
+      </Card>
 
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {result && (
-        <div className="mt-6 text-sm">
-          <p className="text-gray-500">
+        <Card className="mt-6">
+          <p className="text-sm text-[var(--muted)]">
             Window: {result.windowStart} → {result.windowEnd}
           </p>
-          <table className="mt-3 w-full text-left">
+          <table className="mt-3 w-full text-left text-sm">
             <thead>
-              <tr className="text-xs text-gray-400">
-                <th className="pb-1">Funnel level</th>
-                <th className="pb-1">Found</th>
-                <th className="pb-1">Recall</th>
-                <th className="pb-1">Missing ids</th>
+              <tr className="text-xs text-[var(--muted)]">
+                <th className="pb-2">Funnel level</th>
+                <th className="pb-2">Found</th>
+                <th className="pb-2">Recall</th>
+                <th className="pb-2">Missing ids</th>
               </tr>
             </thead>
             <tbody>
@@ -132,16 +128,17 @@ export default function BacktestClient() {
             </tbody>
           </table>
 
-          <h2 className="mt-6 font-medium">Per-domain funnel</h2>
-          <ul className="mt-2 space-y-1">
+          <h2 className="mt-6 text-sm font-medium text-[var(--foreground)]">Per-domain funnel</h2>
+          <ul className="mt-2 space-y-1 text-sm text-[var(--muted)]">
             {result.domains.map((d) => (
               <li key={d.domain.name}>
-                {d.domain.name}: fetched {d.fetched} → shortlisted {d.shortlisted} → picked {d.picked}
-                {d.error && <span className="text-red-600"> (error: {d.error})</span>}
+                <span className="text-[var(--foreground)]">{d.domain.name}</span>: fetched {d.fetched} → shortlisted{" "}
+                {d.shortlisted} → picked {d.picked}
+                {d.error && <span className="text-red-600 dark:text-red-400"> (error: {d.error})</span>}
               </li>
             ))}
           </ul>
-        </div>
+        </Card>
       )}
     </div>
   );
