@@ -175,3 +175,15 @@ that no amount of reading the code would have caught:
    and adding `unavailableDomains.length > 0` to the alert condition. Both bugs are logged here
    as the concrete reason this project treats "run it for real against live services" as part
    of Stage 3's definition of done, not just unit tests passing.
+
+## 2026-10-11 — Deployed to Vercel production, verified live
+
+Production URL: https://research-pulse-navy.vercel.app. Fixed `APP_URL` in Vercel's production
+env (was still `http://localhost:3000` from local dev) to the real deployment URL, since it's
+used both for the orchestrator's self-continuation trigger and the "View in browser" email
+link. Verified live: `/`, `/archive`, `/brief/2026-W41` all return 200; `/runs` correctly
+redirects unauthenticated requests to `/login` (307); `/api/cron/weekly` with the real
+`CRON_SECRET` correctly returns `already_done` for the already-sent week (confirms Postgres
+connectivity, env vars, and idempotency all work on the real deployment, without spending a
+real Gemini/send cycle to prove it). Vercel cron `0 2 * * 1 -> /api/cron/weekly` confirmed
+registered via `vercel crons ls`.
