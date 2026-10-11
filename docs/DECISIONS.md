@@ -293,3 +293,43 @@ pushed out by newer papers before ranking or judging ever sees it. "AI agents" f
 not just this one. Not fixed unilaterally: raising the cap or switching from pure-recency to a
 window-sampling strategy both change core fetch behavior and cost (more arXiv calls), so this
 is flagged as a decision for the user rather than picked silently.
+
+## 2026-10-12 — Stage 5 optional upgrades: GitHub Actions backstop, OpenAlex fallback, OpenReview context, deep-read claim check
+
+All three Stage 5 items from the brief, spiked against live services first:
+
+- **GitHub Actions backstop** (`.github/workflows/weekly-backstop.yml`): fires Monday 06:00 UTC
+  (4h after Vercel's own cron), calls the same `/api/cron/weekly` endpoint with the same
+  `CRON_SECRET`. Idempotent on a normal week (returns `already_done`); only does real work if
+  Vercel's cron somehow didn't fire. `APP_URL`/`CRON_SECRET` set as GitHub repo secrets.
+- **OpenAlex author fallback** (`src/lib/openalex.ts`): exact match via arXiv's DOI
+  (`10.48550/arxiv.<id>`), not fuzzy title search — spiked and confirmed reliable. Scoped as a
+  genuine fallback, not a routine second lookup: only activates when Semantic Scholar's coverage
+  for a domain is below 30% (S2 had 100% coverage in every spike run, so this should rarely
+  trigger in practice), and even then caps at 15 extra papers, since each one costs a
+  paper-lookup plus up to 3 author-profile lookups (OpenAlex doesn't return h-index inline).
+- **OpenReview context signal** (`src/lib/openreview.ts`): scoped down from the brief's "scores"
+  description to presence + venue only. Spiked against a real just-submitted ICLR 2027 paper and
+  found no attached reviews yet — reviews trail submission by months, so a 7-day-old paper
+  realistically never has a score, only a venue. Verified live: 8/12 shortlisted papers in one
+  domain matched a real OpenReview venue. Scoped to the already-shortlisted top-12 only (not all
+  fetched papers, which would be hundreds of lookups/domain) and fed to the Judge as context, not
+  as a deterministic ranking weight — title search is exact-match-only to avoid false positives.
+  Added a rubric line (`content/significance.md`) so the Judge never conflates "under review" with
+  "peer reviewed."
+- **Deep read** (`src/lib/deepread.ts`): for the single highest-significance pick per domain
+  (brief says 1-2; scoped to 1 for time-budget safety), fetches arXiv's HTML rendering, strips to
+  plain text (~18K chars), and asks Gemini (thinking disabled) whether the pick's `so_what` claim
+  is actually supported by the paper's own text — falls back to the abstract if no HTML version
+  exists. Verified correct in isolation (real paper, real claim, correct "yes" verdict citing the
+  actual supporting text) before wiring into the orchestrator.
+
+**Found via live full-run testing, not just isolated testing**: deep-read almost never got a
+chance to run in the first integration test, because `finalizeRun` (headline, render, persist,
+send, deep-read) was running in whatever invocation happened to finish the last domain — which,
+given the orchestrator's already-tight 260s budget for 8 domains, usually had little headroom
+left. Fixed structurally: before calling `finalizeRun`, check remaining budget; if under 110s,
+return `continuing` (same mechanism as the per-domain check) so finalize gets its own fresh
+invocation and deep-read's 90s requirement is almost always satisfiable. This is the same
+"verify for real, not just in isolation" pattern that caught the arXiv parser crash and the
+brief-upsert bug earlier in this build.

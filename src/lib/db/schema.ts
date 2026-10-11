@@ -139,6 +139,8 @@ export const briefItems = pgTable("brief_items", {
   aiAvailable: boolean("ai_available").notNull().default(true),
   model: text("model"),
   promptVersion: text("prompt_version"),
+  /** Stage 5 "deep read": claim-vs-evidence check for the top 1-2 picks per domain only. */
+  claimCheck: jsonb("claim_check").$type<{ supported: string; note: string; usedFullText: boolean }>(),
 });
 
 export const feedback = pgTable(

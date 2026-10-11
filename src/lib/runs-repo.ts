@@ -163,6 +163,7 @@ export interface BriefItemInput {
   aiAvailable: boolean;
   model?: string;
   promptVersion?: string;
+  claimCheck?: { supported: string; note: string; usedFullText: boolean } | null;
 }
 
 /**

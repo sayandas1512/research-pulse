@@ -1,0 +1,1 @@
+ALTER TABLE "brief_items" ADD COLUMN "claim_check" jsonb;

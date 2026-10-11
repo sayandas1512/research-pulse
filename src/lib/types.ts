@@ -44,6 +44,12 @@ export interface RawSignals {
   repoStars: number | null;
   authorSignal: number | null;
   crossDomainHits: number;
+  /**
+   * Context-only, not a ranking weight: only populated for the already-shortlisted top-12
+   * (checking all fetched papers against OpenReview would be hundreds of lookups per domain).
+   * Fed to the Judge as extra context; never part of the deterministic score.
+   */
+  openReviewVenue?: string | null;
 }
 
 export interface Candidate {

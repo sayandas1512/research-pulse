@@ -15,6 +15,13 @@
       "when": 1791734966984,
       "tag": "0001_deep_slapstick",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791744016749,
+      "tag": "0002_faulty_cannonball",
+      "breakpoints": true
     }
   ]
 }

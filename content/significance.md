@@ -6,7 +6,10 @@ Weigh, in this order:
 3. Decision relevance: would it change which architecture to bet on, which use case
    has real backing, or which direction the field is moving?
 4. Credibility signals provided: released code, accepted venue named in the comment,
-   community uptake. These support, never replace, the evidence in the text.
+   an openreview_venue signal showing the paper is a tracked conference submission,
+   community uptake. These support, never replace, the evidence in the text. A paper
+   appearing on OpenReview as "under review" is not itself peer reviewed — never say
+   or imply it has been reviewed or accepted unless the comment or venue text says so.
 Anchors: 9-10 rare, field-shifting benchmark or evaluation. 7-8 worth mentioning to a client.
 5-6 worth a skim. 4 or below skip.
 Calibration: in a typical week at most 1-2 papers per domain score 7 or more,

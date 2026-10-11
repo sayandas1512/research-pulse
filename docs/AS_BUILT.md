@@ -24,6 +24,14 @@ Updated at the end of each stage.
 | 17 | Run-health page | Shipped | `/runs`: per-run funnel totals, failed-domain errors, next scheduled cron time, Run now / Force re-run, useful-pick-rate from recorded feedback |
 | 18 | Backtest | Shipped | `/backtest`: replays a past week (1-4 weeks back) through the real pipeline, no email/persistence, computes recall at fetched/shortlisted/picked levels against an optional known-important-ids list; see `docs/BACKTEST.md` |
 
+## Stage 5 (optional upgrades, built at user's request)
+
+| Upgrade | Status | Notes |
+|---|---|---|
+| Deep read / claim check | Shipped | `src/lib/deepread.ts`: for the top 1 pick per domain (brief says 1-2; scoped to 1 for time-budget safety), fetches arXiv's HTML version, asks Gemini whether the `so_what` claim is supported by the text, falls back to the abstract if no HTML exists. Verified correct in isolation; orchestrator restructured (budget check before finalize) so it reliably gets a chance to run in a real weekly run, not just in isolation |
+| GitHub Actions backstop | Shipped | `.github/workflows/weekly-backstop.yml`, Monday 06:00 UTC, calls the same secured `/api/cron/weekly` route; idempotent on a normal week |
+| OpenReview / OpenAlex | Shipped | OpenReview scoped to presence+venue (not scores — spiked and confirmed reviews aren't available for week-old papers), fed to the Judge as context for the shortlisted top-12 only. OpenAlex author h-index as a bounded fallback when Semantic Scholar's coverage looks degraded, not a routine second lookup |
+
 ## Known deviations from the brief (see `docs/DECISIONS.md` for full reasoning)
 
 - `KAVITA_EMAIL`/`ALERT_EMAIL` point at the Resend account owner's address, not the originally

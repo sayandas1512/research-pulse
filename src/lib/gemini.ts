@@ -97,6 +97,7 @@ function buildCandidatePayload(candidates: Candidate[]) {
       has_code: c.signals.codeLink,
       repo_stars: c.signals.repoStars,
       author_h_index: c.signals.authorSignal,
+      openreview_venue: c.signals.openReviewVenue ?? null,
     },
   }));
 }

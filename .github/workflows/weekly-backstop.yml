@@ -1,0 +1,29 @@
+name: Weekly brief backstop
+
+# Vercel Cron is the primary trigger (0 2 * * 1 -> /api/cron/weekly). This workflow is a
+# backstop in case Vercel's cron doesn't fire (platform incident, account issue, etc.) — it
+# calls the exact same endpoint a few hours later. Idempotency keys off the ISO week, not the
+# trigger source, so firing both on a normal week is harmless: the backstop just gets
+# "already_done" back.
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Monday 06:00 UTC, 4h after Vercel's 02:00 UTC cron
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger weekly orchestrator
+        run: |
+          status=$(curl -sS -o response.json -w "%{http_code}" -X POST "${APP_URL}/api/cron/weekly" \
+            -H "Authorization: Bearer ${CRON_SECRET}")
+          echo "HTTP status: $status"
+          cat response.json
+          if [ "$status" -ge 400 ]; then
+            echo "::error::Weekly backstop request failed with HTTP $status"
+            exit 1
+          fi
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

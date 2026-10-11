@@ -3,11 +3,22 @@ import { fetchArxivDomain } from "./arxiv";
 import { createCallCounter, judgeDomain, type JudgeCallCounter } from "./gemini";
 import { fetchRepoStars, parseGithubRepo } from "./github";
 import { fetchHfUpvotes } from "./hf";
+import { fetchOpenAlexAuthorSignal } from "./openalex";
+import { findOpenReviewSubmission } from "./openreview";
 import { fetchAuthorSignal } from "./scholar";
 import { computeRawSignals, rankAndShortlist, type EnrichmentData } from "./scoring";
 import { selectPicks } from "./select";
 import type { DomainConfig, DomainResult, JudgedCandidate, Paper } from "./types";
 import type { Window } from "./iso-week";
+
+/**
+ * Semantic Scholar normally covers nearly all recent papers (100% in spike testing). Only
+ * fall back to OpenAlex (which needs an extra per-author API call) when S2's coverage for
+ * this domain looks genuinely degraded, and even then cap how many papers get the fallback —
+ * this is meant to catch an S2 outage, not become a routine second lookup for every paper.
+ */
+const OPENALEX_FALLBACK_COVERAGE_THRESHOLD = 0.3;
+const OPENALEX_FALLBACK_MAX_PAPERS = 15;
 
 export interface RunDomainOptions {
   contactEmail: string;
@@ -33,6 +44,14 @@ async function buildEnrichment(
     ),
   ]);
 
+  if (papers.length > 0 && authorHIndex.size / papers.length < OPENALEX_FALLBACK_COVERAGE_THRESHOLD) {
+    const missing = papers.filter((p) => !authorHIndex.has(p.arxivId)).slice(0, OPENALEX_FALLBACK_MAX_PAPERS);
+    for (const paper of missing) {
+      const h = await fetchOpenAlexAuthorSignal(paper.arxivId, options.contactEmail);
+      if (h !== null) authorHIndex.set(paper.arxivId, h);
+    }
+  }
+
   const repoStars = new Map<string, number>();
   for (const paper of papers) {
     const ref = parseGithubRepo(paper.codeUrl);
@@ -42,6 +61,22 @@ async function buildEnrichment(
   }
 
   return { hfUpvotes, authorHIndex, repoStars, crossDomainHits: new Map() };
+}
+
+/**
+ * OpenReview lookup only for the already-shortlisted top-12 — see module comment above.
+ * Sequential (not Promise.all): findOpenReviewSubmission shares a RateLimiter whose wait()
+ * isn't safe under concurrent callers (check-then-set on lastCallAt), so firing all 12 at
+ * once would burst past the intended spacing.
+ */
+async function enrichWithOpenReview(
+  candidates: { paper: Paper; signals: ReturnType<typeof computeRawSignals> }[],
+  contactEmail: string,
+): Promise<void> {
+  for (const c of candidates) {
+    const match = await findOpenReviewSubmission(c.paper.title, contactEmail);
+    c.signals.openReviewVenue = match?.venue ?? null;
+  }
 }
 
 /**
@@ -69,6 +104,12 @@ export async function runDomainPipeline(
   }));
   const weights = { ...DEFAULT_WEIGHTS, ...domain.weightOverrides };
   const shortlisted = rankAndShortlist(papersWithSignals, weights, SHORTLIST_SIZE);
+
+  try {
+    await enrichWithOpenReview(shortlisted, options.contactEmail);
+  } catch {
+    // Optional context signal; a failure here must not fail the domain.
+  }
 
   let judged: JudgedCandidate[];
   let aiAvailable = true;

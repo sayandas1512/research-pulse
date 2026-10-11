@@ -1,4 +1,5 @@
 import { sendAlert } from "./alerts";
+import { fetchPaperFullText, verifyClaim } from "./deepread";
 import { createCallCounter, generateHeadline } from "./gemini";
 import { isoWeekKey, weeklyWindow } from "./iso-week";
 import { listDomains } from "./domains-repo";
@@ -25,6 +26,11 @@ import type { DomainConfig, JudgedCandidate, JudgeVerdict } from "./types";
 
 /** Safety margin under Vercel's 300s maxDuration for this route. */
 const ORCHESTRATOR_BUDGET_MS = 260_000;
+
+/** Headroom finalize (headline + render + persist + send, optionally deep-read) needs before
+ * starting — if an invocation doesn't have this much left after finishing the last domain,
+ * finalize waits for a fresh invocation rather than risk being cut off mid-send. */
+const FINALIZE_MIN_REMAINING_MS = 110_000;
 
 export interface OrchestratorOptions {
   trigger: "cron" | "manual";
@@ -106,8 +112,17 @@ export async function runWeeklyOrchestrator(options: OrchestratorOptions): Promi
   }
 
   // All active domains for this run are now complete (across however many invocations it took).
+  // Finalize (headline, render, persist, send, and optionally deep-read) needs its own headroom.
+  // If this invocation already spent most of its budget just finishing the last few domains,
+  // hand finalize to a fresh invocation instead of cramming it in — this is what makes deep-read
+  // actually get a chance to run in practice, rather than always being skipped for lack of time.
+  if (ORCHESTRATOR_BUDGET_MS - (Date.now() - invocationStart) < FINALIZE_MIN_REMAINING_MS) {
+    await updateRunStatus(run.id, "continuing", { stats: { reason: "reserving_budget_for_finalize" } });
+    return { status: "continuing", isoWeek, runId: run.id, needsContinuation: true };
+  }
+
   try {
-    return await finalizeRun(run.id, isoWeek, allDomains, options);
+    return await finalizeRun(run.id, isoWeek, allDomains, options, invocationStart);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     await updateRunStatus(run.id, "failed", { error: message, finishedAt: new Date() });
@@ -174,11 +189,18 @@ function toJudgedCandidate(row: CandidateRow): JudgedCandidate {
   };
 }
 
+/** Deep-read needs this much headroom left in the invocation's budget to be worth attempting
+ * (one pick per domain, each ~ arXiv HTML fetch + rate limit + a Gemini call). If there isn't
+ * enough left, skip it entirely rather than risk the brief itself getting killed by Vercel's
+ * hard 300s limit — deep-read is optional context, sending the brief is not. */
+const DEEP_READ_MIN_REMAINING_MS = 90_000;
+
 async function finalizeRun(
   runId: string,
   isoWeek: string,
   allDomains: DomainConfig[],
   options: OrchestratorOptions,
+  invocationStart: number,
 ): Promise<OrchestratorResult> {
   const candidateRows = await loadJudgedCandidatesForRun(runId);
   const steps = await listRunSteps(runId);
@@ -250,6 +272,32 @@ async function finalizeRun(
 
   const { data: trimmedData, html, wordCount } = await applyWordBudget(briefData);
 
+  const remainingMs = ORCHESTRATOR_BUDGET_MS - (Date.now() - invocationStart);
+  const claimChecks = new Map<string, Awaited<ReturnType<typeof verifyClaim>>>();
+  if (remainingMs >= DEEP_READ_MIN_REMAINING_MS) {
+    const deepReadCounter = createCallCounter(10);
+    for (const section of trimmedData.sections) {
+      const topPick = section.picks[0]; // picks are pre-sorted by significance descending
+      if (!topPick) continue;
+      if (Date.now() - invocationStart > ORCHESTRATOR_BUDGET_MS) break; // bail if we've run over mid-loop
+      try {
+        const fullText = await fetchPaperFullText(topPick.paper.arxivId, options.contactEmail);
+        const result = await verifyClaim(
+          topPick.paper.title,
+          topPick.paper.abstract,
+          topPick.verdict.soWhat,
+          fullText,
+          options.geminiApiKey,
+          options.geminiModel,
+          deepReadCounter,
+        );
+        claimChecks.set(topPick.paper.arxivId, result);
+      } catch {
+        // Deep read is optional context; a failure here must not affect the brief.
+      }
+    }
+  }
+
   const items = trimmedData.sections.flatMap((section) =>
     section.picks.map((pick, idx) => ({
       id: pick.itemId,
@@ -265,6 +313,7 @@ async function finalizeRun(
       aiAvailable: section.aiAvailable,
       model: options.geminiModel,
       promptVersion: "v1",
+      claimCheck: claimChecks.get(pick.paper.arxivId) ?? null,
     })),
   );
 

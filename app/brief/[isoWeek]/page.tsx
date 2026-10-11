@@ -12,6 +12,20 @@ const ACTION_LABEL: Record<string, string> = {
   skip: "Skip",
 };
 
+const CLAIM_CHECK_LABEL: Record<string, string> = {
+  yes: "Supported",
+  partial: "Partially supported",
+  no: "Not supported",
+  unclear: "Unclear",
+};
+
+const CLAIM_CHECK_COLOR: Record<string, string> = {
+  yes: "text-green-700 dark:text-green-400",
+  partial: "text-amber-700 dark:text-amber-400",
+  no: "text-red-700 dark:text-red-400",
+  unclear: "text-gray-400",
+};
+
 async function BriefContent({ isoWeek }: { isoWeek: string }) {
   const data = await getBriefWithItemsDetailed(isoWeek);
   if (!data) notFound();
@@ -66,6 +80,13 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
                   </p>
                   <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{row.item.soWhat}</p>
                   <p className="text-xs text-gray-400">Caveat: {row.item.caveat}</p>
+                  {row.item.claimCheck && (
+                    <p className={`text-xs ${CLAIM_CHECK_COLOR[row.item.claimCheck.supported] ?? "text-gray-400"}`}>
+                      Claim check ({row.item.claimCheck.usedFullText ? "full text" : "abstract only"}):{" "}
+                      {CLAIM_CHECK_LABEL[row.item.claimCheck.supported] ?? row.item.claimCheck.supported} —{" "}
+                      {row.item.claimCheck.note}
+                    </p>
+                  )}
                   <span className="mt-2 inline-block rounded bg-gray-900 px-2 py-0.5 text-xs text-white dark:bg-gray-100 dark:text-gray-900">
                     {ACTION_LABEL[row.item.action] ?? row.item.action}
                   </span>
