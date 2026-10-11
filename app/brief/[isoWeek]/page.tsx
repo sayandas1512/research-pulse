@@ -2,8 +2,11 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getBriefWithItemsDetailed, listRunSteps } from "@/src/lib/runs-repo";
 import { readTimeMinutes } from "@/src/lib/render";
+import { Badge, Card, EmptyState, Label, PageShell } from "../../components/ui";
 import FeedbackButtons from "./FeedbackButtons";
 import MissedPaperForm from "./MissedPaperForm";
+
+const ACTION_TONE = { read: "accent", skim: "neutral", flag_for_client: "solid", skip: "neutral" } as const;
 
 const ACTION_LABEL: Record<string, string> = {
   read: "Read",
@@ -19,12 +22,9 @@ const CLAIM_CHECK_LABEL: Record<string, string> = {
   unclear: "Unclear",
 };
 
-const CLAIM_CHECK_COLOR: Record<string, string> = {
-  yes: "text-green-700 dark:text-green-400",
-  partial: "text-amber-700 dark:text-amber-400",
-  no: "text-red-700 dark:text-red-400",
-  unclear: "text-gray-400",
-};
+const CLAIM_CHECK_TONE = { yes: "success", partial: "warning", no: "danger", unclear: "neutral" } as const;
+
+const BRIEF_STATUS_TONE = { sent: "success", saved: "accent", send_failed: "danger" } as const;
 
 async function BriefContent({ isoWeek }: { isoWeek: string }) {
   const data = await getBriefWithItemsDetailed(isoWeek);
@@ -51,62 +51,81 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold">Research Pulse — {isoWeek}</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        {readTimeMinutes(brief.wordCount)} min read · {brief.status}
-      </p>
-      {brief.headline && <p className="mt-4 whitespace-pre-line text-sm text-gray-700 dark:text-gray-300">{brief.headline}</p>}
+      <div className="mb-8">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight">Research Pulse — {isoWeek}</h1>
+          <Badge tone={BRIEF_STATUS_TONE[brief.status as keyof typeof BRIEF_STATUS_TONE] ?? "neutral"}>
+            {brief.status}
+          </Badge>
+        </div>
+        <p className="mt-1 text-sm text-[var(--muted)]">{readTimeMinutes(brief.wordCount)} min read</p>
+        {brief.headline && (
+          <Card className="mt-4 whitespace-pre-line bg-[var(--accent-soft)] text-sm leading-relaxed text-[var(--foreground)]">
+            {brief.headline}
+          </Card>
+        )}
+      </div>
 
-      <div className="mt-6 space-y-8">
+      <div className="space-y-10">
         {[...byDomain.entries()].map(([domainName, rows]) => (
           <section key={domainName}>
-            <h2 className="text-lg font-semibold">{domainName}</h2>
-            <p className="text-xs text-gray-400">
-              Scanned {coverageByDomainName.get(domainName)?.scanned ?? 0}, shortlisted{" "}
-              {coverageByDomainName.get(domainName)?.shortlisted ?? 0}, shown {rows.length}.
-            </p>
-            <ul className="mt-2 space-y-4">
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-base font-semibold">{domainName}</h2>
+              <p className="text-xs text-[var(--muted)]">
+                Scanned {coverageByDomainName.get(domainName)?.scanned ?? 0}, shortlisted{" "}
+                {coverageByDomainName.get(domainName)?.shortlisted ?? 0}, shown {rows.length}
+              </p>
+            </div>
+            <ul className="space-y-3">
               {rows.map((row) => (
-                <li key={row.item.id} className="border-t border-gray-100 pt-3 dark:border-gray-800">
-                  <a
-                    href={row.paper.absUrl}
-                    className="font-medium text-blue-700 hover:underline dark:text-blue-400"
-                  >
-                    {row.paper.title}
-                  </a>
-                  <p className="text-xs text-gray-400">
-                    {(row.paper.authors as string[]).slice(0, 3).join(", ")}
-                    {(row.paper.authors as string[]).length > 3 ? " et al." : ""}
-                  </p>
-                  <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{row.item.soWhat}</p>
-                  <p className="text-xs text-gray-400">Caveat: {row.item.caveat}</p>
-                  {row.item.claimCheck && (
-                    <p className={`text-xs ${CLAIM_CHECK_COLOR[row.item.claimCheck.supported] ?? "text-gray-400"}`}>
-                      Claim check ({row.item.claimCheck.usedFullText ? "full text" : "abstract only"}):{" "}
-                      {CLAIM_CHECK_LABEL[row.item.claimCheck.supported] ?? row.item.claimCheck.supported} —{" "}
-                      {row.item.claimCheck.note}
+                <li key={row.item.id}>
+                  <Card>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <a
+                        href={row.paper.absUrl}
+                        className="font-medium text-[var(--foreground)] hover:text-[var(--accent)]"
+                      >
+                        {row.paper.title}
+                      </a>
+                      <Badge tone={ACTION_TONE[row.item.action as keyof typeof ACTION_TONE] ?? "neutral"}>
+                        {ACTION_LABEL[row.item.action] ?? row.item.action}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      {(row.paper.authors as string[]).slice(0, 3).join(", ")}
+                      {(row.paper.authors as string[]).length > 3 ? " et al." : ""}
                     </p>
-                  )}
-                  <span className="mt-2 inline-block rounded bg-gray-900 px-2 py-0.5 text-xs text-white dark:bg-gray-100 dark:text-gray-900">
-                    {ACTION_LABEL[row.item.action] ?? row.item.action}
-                  </span>
-                  <Suspense fallback={null}>
-                    <FeedbackButtons briefItemId={row.item.id} />
-                  </Suspense>
+                    <p className="mt-3 text-sm leading-relaxed text-[var(--foreground)]">{row.item.soWhat}</p>
+                    <p className="mt-1.5 text-xs text-[var(--muted)]">Caveat: {row.item.caveat}</p>
+                    {row.item.claimCheck && (
+                      <div className="mt-2 flex items-start gap-2">
+                        <Badge tone={CLAIM_CHECK_TONE[row.item.claimCheck.supported as keyof typeof CLAIM_CHECK_TONE] ?? "neutral"}>
+                          Claim check: {CLAIM_CHECK_LABEL[row.item.claimCheck.supported] ?? row.item.claimCheck.supported}
+                        </Badge>
+                        <p className="text-xs text-[var(--muted)]">
+                          ({row.item.claimCheck.usedFullText ? "full text" : "abstract only"}) {row.item.claimCheck.note}
+                        </p>
+                      </div>
+                    )}
+                    <Suspense fallback={null}>
+                      <FeedbackButtons briefItemId={row.item.id} />
+                    </Suspense>
+                  </Card>
                 </li>
               ))}
             </ul>
           </section>
         ))}
-        {items.length === 0 && <p className="text-sm text-gray-500">No picks were significant this week.</p>}
+        {items.length === 0 && <EmptyState>No picks were significant this week.</EmptyState>}
       </div>
 
-      <div className="mt-10 border-t border-gray-100 pt-4 dark:border-gray-800">
-        <p className="text-sm font-medium">Missed something in this week&apos;s brief?</p>
+      <Card className="mt-10">
+        <Label>Missed something this week?</Label>
+        <p className="mt-1 text-sm text-[var(--foreground)]">Report a paper by its arXiv id or URL.</p>
         <MissedPaperForm />
-      </div>
+      </Card>
 
-      <p className="mt-6 text-xs text-gray-400">
+      <p className="mt-6 text-xs text-[var(--muted)]">
         Preprints, not peer reviewed unless noted. Summaries are AI-generated from abstracts.
       </p>
     </>
@@ -115,11 +134,11 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
 
 export default function BriefPage({ params }: { params: Promise<{ isoWeek: string }> }) {
   return (
-    <main className="mx-auto max-w-2xl flex-1 p-6">
-      <Suspense fallback={<p className="text-sm text-gray-500">Loading...</p>}>
+    <PageShell>
+      <Suspense fallback={<p className="text-sm text-[var(--muted)]">Loading...</p>}>
         <BriefContentResolver paramsPromise={params} />
       </Suspense>
-    </main>
+    </PageShell>
   );
 }
 
