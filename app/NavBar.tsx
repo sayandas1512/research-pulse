@@ -11,18 +11,41 @@ const LINKS = [
   { href: "/backtest", label: "Backtest" },
 ];
 
+function Wordmark() {
+  return (
+    <Link href="/" className="mr-4 flex items-center gap-2 font-semibold text-[var(--foreground)]">
+      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--accent)] text-xs font-bold text-[var(--accent-foreground)]">
+        RP
+      </span>
+      Research Pulse
+    </Link>
+  );
+}
+
+/** Static shell shown while NavBar (which needs usePathname, a request-time hook under
+ * Cache Components) streams in — same links, no active-state highlight yet, no layout shift. */
+export function NavBarFallback() {
+  return (
+    <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface)]/80 backdrop-blur">
+      <nav className="mx-auto flex max-w-5xl items-center gap-1 px-6 py-3 text-sm">
+        <Wordmark />
+        {LINKS.map((link) => (
+          <Link key={link.href} href={link.href} className="rounded-md px-2.5 py-1.5 text-[var(--muted)]">
+            {link.label}
+          </Link>
+        ))}
+      </nav>
+    </header>
+  );
+}
+
 export default function NavBar() {
   const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--surface)]/80 backdrop-blur">
       <nav className="mx-auto flex max-w-5xl items-center gap-1 px-6 py-3 text-sm">
-        <Link href="/" className="mr-4 flex items-center gap-2 font-semibold text-[var(--foreground)]">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--accent)] text-xs font-bold text-[var(--accent-foreground)]">
-            RP
-          </span>
-          Research Pulse
-        </Link>
+        <Wordmark />
         {LINKS.map((link) => {
           const active = pathname === link.href || pathname.startsWith(`${link.href}/`);
           return (
