@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Action, EvidenceStrength, PaperType } from "@/src/lib/types";
+import { Badge, buttonClass, Card } from "../components/ui";
 
 interface DomainConfig {
   id: string;
@@ -88,41 +89,44 @@ interface PreviewResult {
   closestMiss: { title: string; significance: number | null } | null;
 }
 
+const INPUT_CLASS =
+  "rounded-md border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm text-[var(--foreground)] outline-none focus:border-[var(--accent)]";
+
 function DomainFormFields({ form, onChange }: { form: FormState; onChange: (f: FormState) => void }) {
   return (
     <div className="grid gap-2">
       <input
-        className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900"
+        className={INPUT_CLASS}
         placeholder="Name"
         value={form.name}
         onChange={(e) => onChange({ ...form, name: e.target.value })}
       />
       <input
-        className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900"
+        className={INPUT_CLASS}
         placeholder="Description"
         value={form.description}
         onChange={(e) => onChange({ ...form, description: e.target.value })}
       />
       <input
-        className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900"
+        className={INPUT_CLASS}
         placeholder="arXiv categories (comma-separated, e.g. cs.AI, cs.CL)"
         value={form.arxivCategories}
         onChange={(e) => onChange({ ...form, arxivCategories: e.target.value })}
       />
       <input
-        className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900"
+        className={INPUT_CLASS}
         placeholder="Include keywords (comma-separated)"
         value={form.includeKeywords}
         onChange={(e) => onChange({ ...form, includeKeywords: e.target.value })}
       />
       <input
-        className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900"
+        className={INPUT_CLASS}
         placeholder="Exclude keywords (comma-separated)"
         value={form.excludeKeywords}
         onChange={(e) => onChange({ ...form, excludeKeywords: e.target.value })}
       />
       <textarea
-        className="rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900"
+        className={INPUT_CLASS}
         placeholder="Significance note — what counts as significant in this domain"
         rows={2}
         value={form.significanceNote}
@@ -134,8 +138,8 @@ function DomainFormFields({ form, onChange }: { form: FormState; onChange: (f: F
 
 function PreviewPanel({ result }: { result: PreviewResult }) {
   return (
-    <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3 text-sm dark:border-gray-800 dark:bg-gray-900/50">
-      <div className="font-medium">
+    <div className="mt-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] p-3 text-sm">
+      <div className="font-medium text-[var(--foreground)]">
         Funnel — fetched {result.funnel.fetched} → after excludes {result.funnel.afterExcludes} → shortlisted{" "}
         {result.funnel.shortlisted} → picked {result.funnel.picked}
       </div>
@@ -143,7 +147,7 @@ function PreviewPanel({ result }: { result: PreviewResult }) {
         <p className="mt-1 text-amber-700 dark:text-amber-400">AI unavailable: {result.error}</p>
       )}
       {result.picks.length === 0 ? (
-        <p className="mt-2 text-gray-500">
+        <p className="mt-2 text-[var(--muted)]">
           Nothing significant this week.
           {result.closestMiss && ` Closest miss: "${result.closestMiss.title}" (significance=${result.closestMiss.significance ?? "-"})`}
         </p>
@@ -151,14 +155,14 @@ function PreviewPanel({ result }: { result: PreviewResult }) {
         <ul className="mt-2 space-y-2">
           {result.picks.map((p) => (
             <li key={p.arxivId}>
-              <span className="font-medium">[{p.significance}]</span> {p.title} ({p.action})
-              <p className="text-gray-500">{p.soWhat}</p>
+              <span className="font-medium text-[var(--foreground)]">[{p.significance}]</span> {p.title} ({p.action})
+              <p className="text-[var(--muted)]">{p.soWhat}</p>
             </li>
           ))}
         </ul>
       )}
       <details className="mt-3">
-        <summary className="cursor-pointer text-gray-500">Full shortlist ({result.shortlist.length})</summary>
+        <summary className="cursor-pointer text-[var(--muted)]">Full shortlist ({result.shortlist.length})</summary>
         <ul className="mt-2 space-y-1">
           {result.shortlist.map((c) => (
             <li key={c.arxivId}>
@@ -330,136 +334,133 @@ export default function SettingsClient() {
     setPreviewResults((prev) => ({ ...prev, [domainId]: data }));
   }
 
-  if (loading) return <p className="mt-6 text-sm text-gray-500">Loading...</p>;
+  if (loading) return <p className="mt-6 text-sm text-[var(--muted)]">Loading...</p>;
 
   const sorted = [...domains].sort((a, b) => a.sortOrder - b.sortOrder);
 
   return (
     <div className="mt-6 space-y-4">
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       <div className="flex gap-2">
-        <button
-          onClick={() => setDraftOpen((v) => !v)}
-          className="rounded border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-700"
-        >
+        <button onClick={() => setDraftOpen((v) => !v)} className={buttonClass("secondary")}>
           Draft with Gemini
         </button>
-        <button
-          onClick={() => setAddOpen((v) => !v)}
-          className="rounded border border-gray-300 px-3 py-1.5 text-sm dark:border-gray-700"
-        >
+        <button onClick={() => setAddOpen((v) => !v)} className={buttonClass("secondary")}>
           Add domain manually
         </button>
       </div>
 
       {draftOpen && (
-        <div className="rounded border border-gray-200 p-3 dark:border-gray-800">
-          <p className="text-sm text-gray-500">
+        <Card>
+          <p className="text-sm text-[var(--muted)]">
             Describe a domain in plain English. Gemini will draft categories/keywords/significance note
             for you to review before saving.
           </p>
           <textarea
-            className="mt-2 w-full rounded border border-gray-300 px-2 py-1 text-sm dark:border-gray-700 dark:bg-gray-900"
+            className={`mt-2 w-full ${INPUT_CLASS}`}
             rows={2}
             value={draftDescription}
             onChange={(e) => setDraftDescription(e.target.value)}
             placeholder="e.g. On-device / edge LLM deployment for mobile and embedded hardware"
           />
-          {draftError && <p className="mt-1 text-sm text-red-600">{draftError}</p>}
+          {draftError && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{draftError}</p>}
           <button
             onClick={handleDraft}
             disabled={draftLoading || !draftDescription}
-            className="mt-2 rounded bg-gray-900 px-3 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900"
+            className={buttonClass("primary", "mt-2")}
           >
             {draftLoading ? "Drafting..." : "Draft"}
           </button>
-        </div>
+        </Card>
       )}
 
       {addOpen && (
-        <form
-          onSubmit={handleAddSubmit}
-          className="rounded border border-gray-200 p-3 dark:border-gray-800"
-        >
-          <p className="mb-2 text-sm font-medium">New domain (review before saving)</p>
-          <DomainFormFields form={addForm} onChange={setAddForm} />
-          <button type="submit" className="mt-2 rounded bg-gray-900 px-3 py-1.5 text-sm text-white dark:bg-gray-100 dark:text-gray-900">
-            Save domain
-          </button>
-        </form>
+        <Card>
+          <form onSubmit={handleAddSubmit}>
+            <p className="mb-2 text-sm font-medium text-[var(--foreground)]">New domain (review before saving)</p>
+            <DomainFormFields form={addForm} onChange={setAddForm} />
+            <button type="submit" className={buttonClass("primary", "mt-2")}>
+              Save domain
+            </button>
+          </form>
+        </Card>
       )}
 
       <ul className="space-y-3">
         {sorted.map((d, idx) => (
-          <li key={d.id} className="rounded border border-gray-200 p-3 dark:border-gray-800">
-            {editingId === d.id ? (
-              <div>
-                <DomainFormFields form={editForm} onChange={setEditForm} />
-                <div className="mt-2 flex gap-2">
-                  <button
-                    onClick={() => handleEditSave(d.id)}
-                    className="rounded bg-gray-900 px-3 py-1 text-sm text-white dark:bg-gray-100 dark:text-gray-900"
-                  >
-                    Save
-                  </button>
-                  <button onClick={() => setEditingId(null)} className="rounded border border-gray-300 px-3 py-1 text-sm dark:border-gray-700">
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-start justify-between gap-3">
+          <li key={d.id}>
+            <Card>
+              {editingId === d.id ? (
                 <div>
-                  <p className="font-medium">
-                    {d.name} {!d.active && <span className="text-xs text-gray-400">(inactive)</span>}
-                  </p>
-                  <p className="text-sm text-gray-500">{d.description}</p>
-                  <p className="mt-1 text-xs text-gray-400">
-                    {d.arxivCategories.join(", ")} · include: {d.includeKeywords.join(", ") || "-"} · exclude:{" "}
-                    {d.excludeKeywords.join(", ") || "-"}
-                  </p>
+                  <DomainFormFields form={editForm} onChange={setEditForm} />
+                  <div className="mt-2 flex gap-2">
+                    <button onClick={() => handleEditSave(d.id)} className={buttonClass("primary")}>
+                      Save
+                    </button>
+                    <button onClick={() => setEditingId(null)} className={buttonClass("secondary")}>
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-                <div className="flex shrink-0 flex-wrap gap-1 text-sm">
-                  <button onClick={() => handleReorder(d.id, -1)} disabled={idx === 0} className="rounded border border-gray-300 px-2 py-1 disabled:opacity-30 dark:border-gray-700">
-                    ↑
-                  </button>
-                  <button onClick={() => handleReorder(d.id, 1)} disabled={idx === sorted.length - 1} className="rounded border border-gray-300 px-2 py-1 disabled:opacity-30 dark:border-gray-700">
-                    ↓
-                  </button>
-                  <button onClick={() => handleToggleActive(d)} className="rounded border border-gray-300 px-2 py-1 dark:border-gray-700">
-                    {d.active ? "Deactivate" : "Activate"}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingId(d.id);
-                      setEditForm(toForm(d));
-                    }}
-                    className="rounded border border-gray-300 px-2 py-1 dark:border-gray-700"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handlePreview(d.id)}
-                    disabled={previewLoadingId === d.id}
-                    title="Fetches live arXiv data and runs a real Gemini judging call — typically takes 20-60s depending on the domain's paper volume"
-                    className="rounded border border-gray-300 px-2 py-1 disabled:opacity-50 dark:border-gray-700"
-                  >
-                    {previewLoadingId === d.id ? `Previewing... ${previewElapsedSeconds}s` : "Preview"}
-                  </button>
-                  <button onClick={() => handleDelete(d.id)} className="rounded border border-red-300 px-2 py-1 text-red-600 dark:border-red-800">
-                    Delete
-                  </button>
+              ) : (
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-[var(--foreground)]">{d.name}</p>
+                      {!d.active && <Badge>inactive</Badge>}
+                    </div>
+                    <p className="text-sm text-[var(--muted)]">{d.description}</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">
+                      {d.arxivCategories.join(", ")} · include: {d.includeKeywords.join(", ") || "-"} · exclude:{" "}
+                      {d.excludeKeywords.join(", ") || "-"}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap gap-1.5">
+                    <button onClick={() => handleReorder(d.id, -1)} disabled={idx === 0} className={buttonClass("ghost", "!px-2")}>
+                      ↑
+                    </button>
+                    <button
+                      onClick={() => handleReorder(d.id, 1)}
+                      disabled={idx === sorted.length - 1}
+                      className={buttonClass("ghost", "!px-2")}
+                    >
+                      ↓
+                    </button>
+                    <button onClick={() => handleToggleActive(d)} className={buttonClass("secondary")}>
+                      {d.active ? "Deactivate" : "Activate"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingId(d.id);
+                        setEditForm(toForm(d));
+                      }}
+                      className={buttonClass("secondary")}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handlePreview(d.id)}
+                      disabled={previewLoadingId === d.id}
+                      title="Fetches live arXiv data and runs a real Gemini judging call — typically takes 20-60s depending on the domain's paper volume"
+                      className={buttonClass("primary")}
+                    >
+                      {previewLoadingId === d.id ? `Previewing... ${previewElapsedSeconds}s` : "Preview"}
+                    </button>
+                    <button onClick={() => handleDelete(d.id)} className={buttonClass("danger")}>
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-            {previewLoadingId === d.id && (
-              <p className="mt-3 text-sm text-gray-500">
-                Running the real pipeline against live arXiv data, then a live Gemini call — this
-                can take 20-60s depending on how many papers this domain pulls in. ({previewElapsedSeconds}s elapsed)
-              </p>
-            )}
-            {previewResults[d.id] && <PreviewPanel result={previewResults[d.id]} />}
+              )}
+              {previewLoadingId === d.id && (
+                <p className="mt-3 text-sm text-[var(--muted)]">
+                  Running the real pipeline against live arXiv data, then a live Gemini call — this
+                  can take 20-60s depending on how many papers this domain pulls in. ({previewElapsedSeconds}s elapsed)
+                </p>
+              )}
+              {previewResults[d.id] && <PreviewPanel result={previewResults[d.id]} />}
+            </Card>
           </li>
         ))}
       </ul>
