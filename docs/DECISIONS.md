@@ -455,3 +455,17 @@ Demo reel: the user chose AI-generated Veo clips over screen recordings after se
 trade-off. Generated with the cheapest suitable model (`google/veo-3.1-lite`, 720p, 8s, no
 audio) after quoting the cost. Because these are illustrative scenes, not the product UI, the
 reel is labelled as AI-generated and each clip's caption describes the real pipeline step.
+
+## 2026-10-12 — Demo reel: Veo clips replaced by a product walkthrough
+
+Asked to show a simple workflow video "like Elicit" instead of the AI-generated clips. Elicit's
+home page uses short screen-recording-style demos of the product UI, so the three Veo scenes were
+replaced by one 24s walkthrough: Domains, Collect, Judge, Read. The live app can't be recorded
+without database credentials, so the walkthrough is a scripted storyboard (`scripts/walkthrough/
+index.html`, a paused GSAP timeline in the app's own palette and fonts) rendered frame by frame
+with Playwright and ffmpeg (`record.mjs`). Frame-by-frame rendering means no real-time jitter and
+a reproducible file. Numbers match the verified preview run (58 fetched, 12 shortlisted, 3 picked),
+domains are the real seeded ones, and papers are invented, so the page says "sample papers, not
+live data". Chapter tabs seek to each step; the video loops and only plays while on screen.
+Shipped as H.264 mp4 plus a WebM fallback (about 0.5 MB each). The Veo clips were removed.
+

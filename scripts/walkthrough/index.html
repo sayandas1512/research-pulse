@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Research Pulse walkthrough (recording source)</title>
+<meta name="viewport" content="width=1280" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --background: #f5efe3; --surface: #fffaf1; --surface-muted: #ede4d3; --foreground: #1f1a14;
+    --muted: #6f6556; --border: #e2d7c3; --rule: #cbbda4; --accent: #23409f; --accent-foreground: #fffaf1;
+    --accent-soft: #e4e8f6; --accent-2: #c2562f; --accent-2-soft: #f6e0d4; --ok: #2f7a4f; --ok-soft: #dcefe3;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1280px; height: 720px; overflow: hidden; background: var(--background); }
+  body {
+    font-family: "Hanken Grotesk", system-ui, sans-serif; color: var(--foreground); position: relative;
+    background:
+      radial-gradient(900px 520px at 8% -8%, rgba(205,214,246,.55), transparent 62%),
+      radial-gradient(700px 480px at 100% 110%, rgba(242,205,182,.55), transparent 60%),
+      var(--background);
+  }
+  .serif { font-family: "Fraunces", Georgia, serif; font-optical-sizing: auto; font-weight: 380; letter-spacing: -0.015em; font-variation-settings: "SOFT" 50, "WONK" 0; }
+  .serif em { font-variation-settings: "SOFT" 100, "WONK" 1; }
+  .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+  .win {
+    position: absolute; left: 72px; top: 40px; width: 1136px; height: 640px; border-radius: 18px;
+    background: var(--surface); border: 1px solid var(--border);
+    box-shadow: 0 50px 90px -40px rgba(31,26,20,.45), 0 2px 0 rgba(255,255,255,.6) inset; overflow: hidden;
+  }
+  .bar { height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 18px; border-bottom: 1px solid var(--border); background: var(--surface-muted); }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--rule); }
+  .url { margin: 0 auto; transform: translateX(-30px); font-size: 12px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 99px; padding: 4px 16px; }
+
+  .steps { display: flex; gap: 8px; padding: 14px 28px 0; }
+  .step { font-size: 13px; padding: 6px 14px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); transition: none; }
+  .step .n { font-size: 10px; margin-right: 6px; opacity: .7; }
+  .step.on { background: var(--foreground); border-color: var(--foreground); color: var(--background); }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 16px 28px 0; }
+  .stat { border-left: 1px solid var(--rule); padding-left: 14px; }
+  .stat b { display: block; font-family: "JetBrains Mono", monospace; font-weight: 300; font-size: 30px; line-height: 1; }
+  .stat span { display: block; margin-top: 6px; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .stat.dim b { color: var(--rule); }
+
+  .stage { position: absolute; left: 28px; right: 28px; top: 192px; bottom: 24px; }
+  .scene { position: absolute; inset: 0; opacity: 0; visibility: hidden; }
+  h2 { font-size: 34px; line-height: 1.05; }
+  .lede { margin-top: 8px; font-size: 14px; color: var(--muted); }
+
+  /* Scene 1 */
+  .domains { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .dcard { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; background: var(--background); border: 1px solid var(--border); border-radius: 12px; }
+  .dcard p { font-size: 14px; font-weight: 500; line-height: 1.25; }
+  .dcard small { display: block; margin-top: 4px; font-size: 10px; color: var(--muted); letter-spacing: .06em; }
+  .tog { flex: none; width: 36px; height: 20px; border-radius: 99px; background: var(--rule); position: relative; }
+  .tog::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); transition: none; }
+  .tog.on { background: var(--accent); } .tog.on::after { left: 18px; }
+  .run { position: absolute; right: 0; bottom: 4px; display: inline-flex; align-items: center; gap: 10px; padding: 13px 26px; border-radius: 99px; background: var(--foreground); color: var(--background); font-size: 15px; font-weight: 500; }
+  .spin { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(245,239,227,.35); border-top-color: var(--background); display: none; }
+    .tip { position: absolute; left: 0; bottom: 14px; font-size: 13px; color: var(--muted); }
+
+  /* Tables */
+  .tbl { margin-top: 16px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--background); }
+  .row { display: grid; grid-template-columns: 150px 1fr 70px 70px 54px 150px; align-items: center; gap: 12px; padding: 0 16px; height: 44px; border-top: 1px solid var(--border); font-size: 13.5px; position: relative; }
+  .row.head { height: 34px; border-top: 0; background: var(--surface-muted); font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .row .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+  .row .dom { font-size: 11px; color: var(--accent); background: var(--accent-soft); padding: 3px 8px; border-radius: 99px; width: max-content; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .num { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--muted); }
+  .row .code { font-size: 12px; color: var(--ok); font-family: "JetBrains Mono", monospace; }
+  .sig { height: 6px; border-radius: 99px; background: var(--surface-muted); overflow: hidden; } .sig i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 99px; }
+  .score { display: flex; align-items: center; gap: 10px; }
+  .score .bar2 { flex: 1; height: 6px; border-radius: 99px; background: var(--surface-muted); overflow: hidden; } .score .bar2 i { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--accent); }
+  .score b { width: 22px; text-align: right; font-family: "JetBrains Mono", monospace; font-weight: 500; font-size: 14px; }
+  .cut { position: absolute; left: 0; right: 0; height: 0; border-top: 1.5px dashed var(--accent-2); opacity: 0; }
+  .cutlbl { position: absolute; left: 600px; background: var(--background); padding: 0 8px; font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent-2); opacity: 0; }
+  .score { position: relative; }
+  .think { position: absolute; left: 0; top: 50%; transform: translateY(-50%); z-index: 2; opacity: 0; font-size: 12px; color: var(--muted); font-style: italic; background: var(--background); padding-right: 8px; white-space: nowrap; }
+  .src { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+  .chip { padding: 4px 11px; border-radius: 99px; border: 1px solid var(--border); color: var(--muted); }
+  .chip.k { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  /* Scene 4 */
+  .mail { margin: 0 auto; width: 860px; margin-top: 4px; background: var(--background); border: 1px solid var(--border); border-radius: 14px; padding: 22px 28px; }
+  .mail .meta { display: flex; justify-content: space-between; font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .head-p { margin-top: 12px; font-size: 21px; line-height: 1.3; border-left: 2px solid var(--accent); padding-left: 16px; min-height: 84px; }
+  .item { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: start; padding: 13px 0; border-top: 1px solid var(--border); }
+  .item:first-of-type { margin-top: 14px; }
+  .badge { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; padding: 5px 10px; border-radius: 99px; width: max-content; }
+  .b-flag { background: var(--accent-2-soft); color: var(--accent-2); } .b-read { background: var(--ok-soft); color: var(--ok); } .b-skim { background: var(--accent-soft); color: var(--accent); }
+  .item p.t { font-size: 15.5px; font-weight: 600; line-height: 1.25; } .item p.s { margin-top: 4px; font-size: 13px; line-height: 1.45; color: var(--muted); }
+
+  /* Cursor */
+  #cursor { position: absolute; left: 0; top: 0; width: 26px; height: 26px; z-index: 50; pointer-events: none; filter: drop-shadow(0 3px 4px rgba(0,0,0,.28)); }
+  #ring { position: absolute; left: 0; top: 0; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; border: 2px solid var(--accent); z-index: 49; opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div class="win">
+  <div class="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><div class="url mono">research-pulse · this week</div></div>
+  <div class="steps" id="steps">
+    <div class="step on"><span class="n mono">01</span>Domains</div>
+    <div class="step"><span class="n mono">02</span>Collect</div>
+    <div class="step"><span class="n mono">03</span>Judge</div>
+    <div class="step"><span class="n mono">04</span>Read</div>
+  </div>
+  <div class="stats">
+    <div class="stat dim" id="s-fetched"><b>0</b><span>Papers scanned</span></div>
+    <div class="stat dim" id="s-short"><b>0</b><span>Shortlisted</span></div>
+    <div class="stat dim" id="s-pick"><b>0</b><span>Picked for you</span></div>
+  </div>
+
+  <div class="stage">
+    <!-- 1 -->
+    <section class="scene" id="sc1">
+      <h2 class="serif">What do you want to <em>follow</em>?</h2>
+      <p class="lede">Each domain carries its own keywords and arXiv categories. Switch them on and off any time.</p>
+      <div class="domains" id="domains"></div>
+      <p class="tip">Runs automatically every Monday. Or start one now.</p>
+      <div class="run" id="runbtn"><span class="spin" id="spin"></span><span id="runtxt">Run this week →</span></div>
+    </section>
+    <!-- 2 -->
+    <section class="scene" id="sc2">
+      <h2 class="serif">Hundreds of preprints, <em>ranked fast</em></h2>
+      <div class="src"><span class="chip k">arXiv · candidates</span><span class="chip">Hugging Face upvotes</span><span class="chip">Semantic Scholar</span><span class="chip">GitHub stars</span><span class="chip">signals rank the shortlist</span></div>
+      <div class="tbl" id="tbl2"></div>
+    </section>
+    <!-- 3 -->
+    <section class="scene" id="sc3">
+      <h2 class="serif">Scored for <em>significance</em>, 0 to 10</h2>
+      <p class="lede">Only papers scoring 6 or more can make the brief.</p>
+      <div class="tbl" id="tbl3" style="position:relative"></div>
+    </section>
+    <!-- 4 -->
+    <section class="scene" id="sc4">
+      <div class="mail">
+        <div class="meta"><span>Your weekly brief</span><span>3 picks · 8 min read</span></div>
+        <p class="head-p serif" id="headp"></p>
+        <div id="items"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="ring"></div>
+<svg id="cursor" viewBox="0 0 24 24"><path d="M3 2l7.5 19 2.6-7.9L21 10.5z" fill="#1f1a14" stroke="#fffaf1" stroke-width="1.6" stroke-linejoin="round"/></svg>
+
+<script src="../../node_modules/gsap/dist/gsap.min.js"></script>
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+const DOMAINS = [
+  ["AI agents", "agents · tool use · planning", true],
+  ["Retrieval-augmented generation", "RAG · retrieval · grounding", true],
+  ["LLMs for code", "code generation · repair", false],
+  ["LLM evaluation and benchmarks", "evals · judges · benchmarks", true],
+  ["AI safety, security and governance", "red-teaming · policy", true],
+  ["Efficient inference and small models", "quantisation · distillation", false],
+];
+$("#domains").innerHTML = DOMAINS.map(([n, k, on]) =>
+  `<div class="dcard"><div><p>${n}</p><small class="mono">${k}</small></div><div class="tog ${on ? "on" : ""}"></div></div>`).join("");
+
+const PAPERS = [
+  ["AI agents", "Scaling Laws for Multi-Agent Coordination", 214, "1.8k", true, 9, "flag"],
+  ["RAG", "Benchmarking Long-Context Retrieval in Production LLMs", 96, "640", true, 8, "read"],
+  ["AI safety", "A Survey of Prompt-Injection Defenses", 71, "310", true, 7, "skim"],
+  ["LLMs for code", "Repository-Scale Code Repair with Small Models", 58, "905", true, 5],
+  ["LLM evaluation", "Judging the Judges: Reliability of LLM Evaluators", 44, "120", false, 4],
+  ["Efficient inference", "Yet Another Low-Rank Adapter Variant", 9, "12", false, 2],
+  ["AI agents", "A Minor Tweak to a Planning Heuristic", 3, "0", false, 1],
+];
+const HEAD = `<div class="row head"><span>Domain</span><span>Paper</span><span>HF ▲</span><span>★</span><span>Code</span><span>Rank signal</span></div>`;
+const sigW = (p) => Math.min(100, Math.round(Math.log10(p[2] + 1) / Math.log10(240) * 100));
+$("#tbl2").innerHTML = HEAD + PAPERS.map((p) =>
+  `<div class="row r2"><span class="dom">${p[0]}</span><span class="t">${p[1]}</span><span class="num">${p[2]}</span><span class="num">${p[3]}</span><span class="code">${p[4] ? "yes" : "–"}</span><div class="sig"><i data-w="${sigW(p)}"></i></div></div>`).join("");
+
+const HEAD3 = `<div class="row head" style="grid-template-columns:150px 1fr 230px"><span>Domain</span><span>Paper</span><span>Significance</span></div>`;
+$("#tbl3").innerHTML = HEAD3 + PAPERS.slice(0, 6).map((p) =>
+  `<div class="row r3" style="grid-template-columns:150px 1fr 230px"><span class="dom">${p[0]}</span><span class="t">${p[1]}</span><div class="score"><span class="think">reading abstract…</span><div class="bar2"><i data-w="${p[5] * 10}" class="${p[5] >= 6 ? "" : "lo"}"></i></div><b data-s="${p[5]}">·</b></div></div>`).join("") +
+  `<div class="cut" id="cut"></div><div class="cutlbl" id="cutlbl">cut-off · 6</div>`;
+
+const ITEMS = [
+  ["flag", "Flag for client", "Scaling Laws for Multi-Agent Coordination", "Coordination cost grows faster than capability. Relevant to any client planning agent fleets."],
+  ["read", "Read", "Benchmarking Long-Context Retrieval in Production LLMs", "Longer context does not remove the need for retrieval. Caveat: tested on English corpora only."],
+  ["skim", "Skim", "A Survey of Prompt-Injection Defenses", "A useful map of mitigations; no defence is complete, so keep humans in the loop."],
+];
+$("#items").innerHTML = ITEMS.map(([k, l, t, s]) =>
+  `<div class="item"><span class="badge b-${k}">${l}</span><div><p class="t">${t}</p><p class="s">${s}</p></div></div>`).join("");
+const HEAD_TEXT = "Agents are getting better at working together, and the evidence says the coordination cost is the thing to watch.";
+
+// ------------------------------------------------------------ timeline
+const cursor = $("#cursor"), ring = $("#ring");
+gsap.set(cursor, { x: 1020, y: 640 });
+const state = { f: 0, s: 0, p: 0 };
+const setStat = (id, v, on) => { const el = $(id); el.firstElementChild.textContent = Math.round(v); el.classList.toggle("dim", !on); };
+const stepOn = (i) => $$(".step").forEach((el, k) => el.classList.toggle("on", k === i));
+const at = (el, dx = 0.5, dy = 0.5) => () => { const r = el.getBoundingClientRect(); return r.left + r.width * dx; };
+const aty = (el, dx = 0.5, dy = 0.5) => () => { const r = el.getBoundingClientRect(); return r.top + r.height * dy; };
+const click = (tl, t) => tl.fromTo(ring, { x: () => gsap.getProperty(cursor, "x") + 4, y: () => gsap.getProperty(cursor, "y") + 4, scale: .3, opacity: .9 }, { scale: 1.3, opacity: 0, duration: .5, ease: "power2.out" }, t)
+  .to(cursor, { scale: .86, duration: .08, yoyo: true, repeat: 1 }, t);
+const show = (tl, sel, t, d = .45) => tl.set(sel, { visibility: "visible" }, t).fromTo(sel, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: d, ease: "power2.out" }, t);
+const hide = (tl, sel, t, d = .35) => tl.to(sel, { opacity: 0, duration: d }, t).set(sel, { visibility: "hidden" }, t + d);
+
+function build() {
+  const tl = gsap.timeline({ paused: true, defaults: { ease: "power2.inOut" } });
+
+  // ---- Scene 1 (0 - 6)
+  show(tl, "#sc1", 0.1);
+  const toggle3 = $$(".tog")[2], runbtn = $("#runbtn");
+  tl.to(cursor, { x: at(toggle3), y: aty(toggle3), duration: 1.1 }, 0.9);
+  click(tl, 2.05);
+  tl.call(() => toggle3.classList.add("on"), null, 2.1);
+  tl.to(cursor, { x: at(runbtn, .5), y: aty(runbtn, .5), duration: 1.0 }, 2.7);
+  click(tl, 3.75);
+  tl.call(() => { $("#runtxt").textContent = "Running…"; $("#spin").style.display = "inline-block"; }, null, 3.8);
+  tl.to("#spin", { rotation: 720, duration: 1.5, ease: "none" }, 3.8);
+  hide(tl, "#sc1", 5.3);
+
+  // ---- Scene 2 (5.6 - 11.6)
+  tl.call(() => stepOn(1), null, 5.5);
+  show(tl, "#sc2", 5.7);
+  tl.to(state, { f: 58, duration: 2.6, ease: "none", onUpdate: () => setStat("#s-fetched", state.f, true) }, 5.9);
+  tl.fromTo("#tbl2 .r2", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: .35, stagger: .32 }, 6.2);
+  tl.to("#tbl2 .sig i", { width: (i, el) => el.dataset.w + "%", duration: .6, stagger: .32 }, 6.4);
+  tl.to(state, { s: 12, duration: 1.0, ease: "power1.out", onUpdate: () => setStat("#s-short", state.s, true) }, 9.3);
+  tl.to("#tbl2 .r2:nth-of-type(n+5)", { opacity: .35, duration: .5 }, 9.5);
+  hide(tl, "#sc2", 11.0);
+
+  // ---- Scene 3 (11.4 - 17.4)
+  tl.call(() => stepOn(2), null, 11.3);
+  show(tl, "#sc3", 11.5);
+  tl.fromTo("#tbl3 .r3", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: .35, stagger: .12 }, 11.7);
+  $$("#tbl3 .r3").forEach((row, i) => {
+    const t0 = 12.6 + i * .55, b = $("b", row), fill = $(".bar2 i", row), th = $(".think", row), s = +b.dataset.s;
+    const v = { n: 0 };
+    tl.set(th, { opacity: 1 }, 12.4 + i * .55)
+      .to(th, { opacity: 0, duration: .15 }, t0)
+      .to(fill, { width: (s * 10) + "%", duration: .6, ease: "power2.out" }, t0)
+      .to(v, { n: s, duration: .6, ease: "power2.out", onUpdate: () => { b.textContent = Math.round(v.n); } }, t0);
+    if (s < 6) tl.to(fill, { backgroundColor: "#cbbda4", duration: .2 }, t0 + .6).to(row, { opacity: .42, duration: .4 }, t0 + .7);
+    else tl.to(fill, { backgroundColor: "#2f7a4f", duration: .2 }, t0 + .6);
+  });
+  tl.set("#cut", { top: () => $("#tbl3 .r3:nth-of-type(4)").offsetTop - 1 }, 12.2)
+    .to("#cut", { opacity: 1, duration: .4 }, 15.2)
+    .set("#cutlbl", { top: () => $("#tbl3 .r3:nth-of-type(4)").offsetTop - 7 }, 12.2)
+    .to("#cutlbl", { opacity: 1, duration: .4 }, 15.2);
+  tl.to(state, { p: 3, duration: .6, ease: "none", onUpdate: () => setStat("#s-pick", state.p, true) }, 15.5);
+  hide(tl, "#sc3", 16.8);
+
+  // ---- Scene 4 (17.1 - 23.5)
+  tl.call(() => stepOn(3), null, 17.0);
+  show(tl, "#sc4", 17.2);
+  const hp = { n: 0 };
+  tl.to(hp, { n: HEAD_TEXT.length, duration: 2.0, ease: "none", onUpdate: () => { $("#headp").textContent = HEAD_TEXT.slice(0, Math.round(hp.n)); } }, 17.6);
+  tl.fromTo("#items .item", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: .45, stagger: .6 }, 19.7);
+  const firstBadge = $("#items .badge");
+  tl.to(cursor, { x: at(firstBadge, .5), y: aty(firstBadge, .5), duration: 1.0 }, 21.4);
+  click(tl, 22.5);
+  tl.to(firstBadge, { scale: 1.12, duration: .15, yoyo: true, repeat: 1 }, 22.5);
+
+  // ---- loop back to the opening state (23.5 - 24)
+  hide(tl, "#sc4", 23.4, .4);
+  tl.call(() => { // reset for a seamless loop
+    stepOn(0); ["#s-fetched", "#s-short", "#s-pick"].forEach((id) => setStat(id, 0, false));
+    $$(".tog")[2].classList.remove("on"); $("#runtxt").textContent = "Run this week →"; $("#spin").style.display = "none";
+  }, null, 23.8);
+  tl.to(cursor, { x: 1020, y: 640, duration: .4 }, 23.5);
+  tl.set({}, {}, 24);
+  return tl;
+}
+const tl = build();
+window.__duration = 24;
+window.__start = () => { tl.play(0); };
+window.__seek = (t) => { tl.seek(t, false).pause(); };   // for still frames while developing
+window.__ready = document.fonts.ready.then(() => true);
+</script>
+</body>
+</html>
