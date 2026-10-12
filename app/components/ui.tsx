@@ -31,7 +31,7 @@ export function PageHeader({
 
 /** Small mono, letter-spaced line above a heading — the "section label" of a printed journal. */
 export function Kicker({ children }: { children: ReactNode }) {
-  return <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--muted)]">{children}</p>;
+  return <p className="mb-3 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--accent-2)]">{children}</p>;
 }
 
 export function Card({

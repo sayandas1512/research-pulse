@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { getLatestBriefSummary } from "@/src/lib/runs-repo";
+import { getBriefWithItemsDetailed, getLatestBriefSummary, listBriefs } from "@/src/lib/runs-repo";
 import { readTimeMinutes } from "@/src/lib/render";
 import { Card, Kicker } from "./components/ui";
 import { Reveal } from "./components/motion/Reveal";
@@ -8,15 +8,27 @@ import { SplitHeadline } from "./components/motion/SplitHeadline";
 import { CountUp } from "./components/motion/CountUp";
 import { Magnetic } from "./components/motion/Magnetic";
 import { AmbientBackground } from "./components/motion/AmbientBackground";
+import { Scribble } from "./components/motion/Scribble";
+import { Ticker } from "./components/motion/Ticker";
 import DataFlowDemo from "./components/DataFlowDemo";
 
 function Stat({ value, label }: { value: number; label: string }) {
   return (
     <div className="border-l border-[var(--rule)] pl-4">
-      <CountUp value={value} className="block font-serif text-4xl leading-none text-[var(--foreground)] sm:text-5xl" />
+      <CountUp value={value} className="block font-mono text-3xl font-light leading-none tracking-tight text-[var(--foreground)] sm:text-4xl" />
       <span className="mt-2 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">{label}</span>
     </div>
   );
+}
+
+/** This week's paper titles, scrolling across the top of the home page. */
+async function HeadlineTicker() {
+  const [latest] = await listBriefs();
+  if (!latest) return null;
+  const detailed = await getBriefWithItemsDetailed(latest.isoWeek);
+  if (!detailed) return null;
+  const items = detailed.items.map(({ paper, domainName }) => ({ label: domainName, title: paper.title }));
+  return <Ticker items={items} href={`/brief/${latest.isoWeek}`} />;
 }
 
 async function LatestBrief() {
@@ -58,7 +70,7 @@ async function LatestBrief() {
       {brief.headline && (
         <Reveal as="figure" delay={150} className="mt-20">
           <Kicker>This week, in one paragraph</Kicker>
-          <blockquote className="whitespace-pre-line border-l-2 border-[var(--accent)] pl-6 font-serif text-2xl leading-snug text-[var(--foreground)] sm:text-[1.7rem]">
+          <blockquote className="whitespace-pre-line border-l-2 border-[var(--accent)] pl-6 font-serif text-xl leading-snug text-[var(--foreground)] sm:text-2xl">
             {brief.headline}
           </blockquote>
         </Reveal>
@@ -76,12 +88,18 @@ const STEPS = [
 export default function HomePage() {
   return (
     <main className="flex-1">
+      <Suspense fallback={null}>
+        <HeadlineTicker />
+      </Suspense>
       <section className="relative isolate overflow-hidden px-6 pb-40 pt-14 lg:px-12 lg:pt-24">
         <AmbientBackground />
         <div className="mx-auto max-w-4xl">
           <Kicker>Research Pulse · Your weekly AI-research brief</Kicker>
           <SplitHeadline className="font-serif text-6xl leading-[0.95] tracking-tight text-[var(--foreground)] sm:text-7xl lg:text-8xl">
-            Welcome back, <em className="text-[var(--accent)]">Kavita.</em>
+            Welcome back,{" "}
+            <Scribble delay={1100}>
+              <em className="text-[var(--accent)]">Kavita.</em>
+            </Scribble>
           </SplitHeadline>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-[var(--muted)]">
             What matters in AI research this week, sorted by domain and short enough to read in under ten minutes,
@@ -98,7 +116,11 @@ export default function HomePage() {
           <Reveal>
             <Kicker>How it works</Kicker>
             <h2 className="font-serif text-4xl leading-[1.05] tracking-tight">
-              From hundreds of preprints to a <em>ten-minute</em> read.
+              From hundreds of preprints to a{" "}
+              <Scribble variant="circle">
+                <em>ten-minute</em>
+              </Scribble>{" "}
+              read.
             </h2>
             <ol className="mt-8 space-y-6">
               {STEPS.map(([title, body], i) => (

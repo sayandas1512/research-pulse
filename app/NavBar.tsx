@@ -31,7 +31,7 @@ function Wordmark() {
   return (
     <Link href="/" className="flex items-center gap-2.5 text-[var(--foreground)]">
       <Logo size={28} />
-      <span className="font-serif text-2xl leading-none tracking-tight sm:text-xl lg:text-2xl">Research Pulse</span>
+      <span className="whitespace-nowrap font-serif text-2xl leading-none tracking-tight sm:text-lg md:text-xl lg:text-2xl">Research Pulse</span>
     </Link>
   );
 }

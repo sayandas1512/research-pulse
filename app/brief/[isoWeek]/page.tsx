@@ -4,6 +4,7 @@ import { getBriefWithItemsDetailed, listRunSteps } from "@/src/lib/runs-repo";
 import { readTimeMinutes } from "@/src/lib/render";
 import { Badge, Card, EmptyState, Kicker, Label, PageShell } from "../../components/ui";
 import { Reveal } from "../../components/motion/Reveal";
+import { Scribble } from "../../components/motion/Scribble";
 import FeedbackButtons from "./FeedbackButtons";
 import MissedPaperForm from "./MissedPaperForm";
 
@@ -92,9 +93,15 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
                       >
                         {row.paper.title}
                       </a>
-                      <Badge tone={ACTION_TONE[row.item.action as keyof typeof ACTION_TONE] ?? "neutral"}>
-                        {ACTION_LABEL[row.item.action] ?? row.item.action}
-                      </Badge>
+                      {row.item.action === "flag_for_client" ? (
+                        <Scribble variant="circle" delay={200}>
+                          <Badge tone="solid">{ACTION_LABEL.flag_for_client}</Badge>
+                        </Scribble>
+                      ) : (
+                        <Badge tone={ACTION_TONE[row.item.action as keyof typeof ACTION_TONE] ?? "neutral"}>
+                          {ACTION_LABEL[row.item.action] ?? row.item.action}
+                        </Badge>
+                      )}
                     </div>
                     <p className="mt-1 text-xs text-[var(--muted)]">
                       {(row.paper.authors as string[]).slice(0, 3).join(", ")}

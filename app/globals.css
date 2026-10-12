@@ -1,41 +1,45 @@
 @import "tailwindcss";
 
-/* Editorial "research journal" palette: warm paper, ink-blue accent, fine rules. */
+/* Expressive-serif palette: warm cream paper, ink-blue primary, terracotta second accent. */
 :root {
-  --background: #f6f2ea;
-  --surface: #fffdf8;
-  --surface-muted: #efe9de;
-  --foreground: #1b1915;
-  --muted: #6d665a;
-  --border: #e3dccd;
-  --rule: #cfc6b3;
-  --accent: #2341b5;
-  --accent-foreground: #fffdf8;
-  --accent-soft: #e6eaf8;
-  --orb-a: #c9d3fb;
-  --orb-b: #f3d9bf;
+  --background: #f5efe3;
+  --surface: #fffaf1;
+  --surface-muted: #ede4d3;
+  --foreground: #1f1a14;
+  --muted: #6f6556;
+  --border: #e2d7c3;
+  --rule: #cbbda4;
+  --accent: #23409f;
+  --accent-foreground: #fffaf1;
+  --accent-soft: #e4e8f6;
+  --accent-2: #c2562f;
+  --accent-2-soft: #f6e0d4;
+  --orb-a: #cdd6f6;
+  --orb-b: #f2cdb6;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #12110e;
-    --surface: #1a1915;
-    --surface-muted: #24221d;
-    --foreground: #f2ede3;
-    --muted: #a59e90;
-    --border: #2f2c25;
-    --rule: #3d3930;
-    --accent: #93a8ff;
-    --accent-foreground: #12110e;
-    --accent-soft: #1d2238;
+    --background: #15120e;
+    --surface: #1d1914;
+    --surface-muted: #28231c;
+    --foreground: #f3ece0;
+    --muted: #a99e8d;
+    --border: #322b22;
+    --rule: #443a2e;
+    --accent: #98abff;
+    --accent-foreground: #15120e;
+    --accent-soft: #1f2440;
+    --accent-2: #e8845c;
+    --accent-2-soft: #3a2218;
     --orb-a: #1f2a5c;
-    --orb-b: #3a2a1a;
+    --orb-b: #46261a;
   }
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-code);
   --font-serif: var(--font-display);
 }
 
@@ -44,11 +48,27 @@ body {
     radial-gradient(1200px 600px at 10% -10%, color-mix(in srgb, var(--orb-a) 35%, transparent), transparent 60%),
     var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), Arial, Helvetica, sans-serif;
+}
+
+@layer base {
+  /* Fraunces: optical sizing tracks the font size; display sizes get a lighter, softer cut,
+     and italics turn on the "wonky" alternates for the hand-set look. */
+  .font-serif {
+    font-optical-sizing: auto;
+    font-weight: 380;
+    font-variation-settings: "SOFT" 50, "WONK" 0;
+    letter-spacing: -0.015em;
+  }
+
+  .font-serif em,
+  em.font-serif {
+    font-variation-settings: "SOFT" 100, "WONK" 1;
+  }
 }
 
 ::selection {
-  background: var(--accent-soft);
+  background: var(--accent-2-soft);
 }
 
 /* Entrance/attention motion is handled by GSAP (see app/components/motion/) so it can

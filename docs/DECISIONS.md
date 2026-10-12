@@ -422,3 +422,15 @@ the specific GSAP features and the "research journal" direction before build. No
 - Two GSAP gotchas fixed: the feedback toast is portaled to `<body>` because a transformed
   ancestor card turns `position: fixed` into card-relative; the nav indicator measures with
   bounding rects because the Magnetic wrapper's transform becomes the link's `offsetParent`.
+
+## 2026-10-12 — Type and styling refresh (expressive serif)
+
+Asked to make the fonts and styling more creative, using community sources for ideas. Reddit
+was unreachable from the tools, so ideas came from Typewolf-based trend data, Awwwards
+typography winners and 2026 type round-ups. The consistent signals were expressive variable
+serifs, warmer neo-grotesques for body text, mono for data, and warmth over flat neutrals. The
+user chose the "expressive serif" direction from three options, plus two extras (headline
+ticker, hand-drawn highlights), and declined grain texture and drop caps. Fraunces' WONK axis is
+only enabled on italics, so headlines stay calm and the quirk shows up as emphasis. The ticker
+and scribbles are fully rendered on the server and only animated by GSAP, so they still work
+without JS and under reduced motion (the ticker then simply stays still).

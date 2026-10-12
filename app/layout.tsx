@@ -1,24 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import NavBar, { NavBarFallback } from "./NavBar";
 import ChatWidgetGate from "./components/ChatWidgetGate";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const instrumentSerif = Instrument_Serif({
+// Expressive-serif system: Fraunces (variable, with its SOFT/WONK axes) for display,
+// Hanken Grotesk for reading, JetBrains Mono for labels and numbers.
+const fraunces = Fraunces({
   variable: "--font-display",
-  weight: "400",
   style: ["normal", "italic"],
+  axes: ["SOFT", "WONK", "opsz"],
+  subsets: ["latin"],
+});
+
+const hanken = Hanken_Grotesk({
+  variable: "--font-body",
+  subsets: ["latin"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-code",
   subsets: ["latin"],
 });
 
@@ -31,7 +33,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${hanken.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       {/* Content on the left, navigation in a column on the right (top bar on small screens). */}
       <body className="flex min-h-full flex-col sm:flex-row">
