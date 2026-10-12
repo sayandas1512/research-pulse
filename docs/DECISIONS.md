@@ -469,3 +469,11 @@ domains are the real seeded ones, and papers are invented, so the page says "sam
 live data". Chapter tabs seek to each step; the video loops and only plays while on screen.
 Shipped as H.264 mp4 plus a WebM fallback (about 0.5 MB each). The Veo clips were removed.
 
+
+## 2026-10-12 — Vercel connected to GitHub
+
+The Vercel project was previously deployed only by hand with `vercel deploy` from the CLI; the
+GitHub auto-connect had failed during setup (see SPIKES S6), so pushes to `main` did not build
+anything and the live site stayed on an older commit. The repository is now connected in the
+Vercel dashboard, so a push to `main` should deploy to production automatically. If the live
+site ever lags behind `main`, check the Deployments tab for the commit it was built from.
