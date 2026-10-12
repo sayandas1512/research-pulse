@@ -32,6 +32,13 @@ Updated at the end of each stage.
 | GitHub Actions backstop | Shipped | `.github/workflows/weekly-backstop.yml`, Monday 06:00 UTC, calls the same secured `/api/cron/weekly` route; idempotent on a normal week |
 | OpenReview / OpenAlex | Shipped | OpenReview scoped to presence+venue (not scores — spiked and confirmed reviews aren't available for week-old papers), fed to the Judge as context for the shortlisted top-12 only. OpenAlex author h-index as a bounded fallback when Semantic Scholar's coverage looks degraded, not a routine second lookup |
 
+## Post-submission UI additions (not part of the brief's 18 steps)
+
+| Addition | Status | Notes |
+|---|---|---|
+| GSAP motion system | Shipped | Replaces the CSS-keyframe animations app-wide (`app/components/motion/Reveal.tsx`, `PulseRings.tsx`, `Logo.tsx`'s glow). Respects `prefers-reduced-motion` via JS in each component. |
+| In-app assistant (Dify) | Scaffolded, not yet live | `app/api/chat/route.ts` proxies to a Dify chat app; widget (`ChatWidget.tsx`) is gated by `DIFY_API_URL`/`DIFY_API_KEY` and renders nothing until both are set. No Dify app has been created for this project yet — verified end-to-end with a placeholder key (reached Dify, got a real 401, failed gracefully). |
+
 ## Known deviations from the brief (see `docs/DECISIONS.md` for full reasoning)
 
 - `KAVITA_EMAIL`/`ALERT_EMAIL` point at the Resend account owner's address, not the originally

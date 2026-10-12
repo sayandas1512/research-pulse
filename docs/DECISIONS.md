@@ -333,3 +333,34 @@ return `continuing` (same mechanism as the per-domain check) so finalize gets it
 invocation and deep-read's 90s requirement is almost always satisfiable. This is the same
 "verify for real, not just in isolation" pattern that caught the arXiv parser crash and the
 brief-upsert bug earlier in this build.
+
+## 2026-10-12 — GSAP for entrance/attention motion; Dify-backed in-app assistant (post-submission UI additions)
+
+Two UI additions made after the core 18-step pipeline was built and submission-tested, at the
+user's explicit request:
+
+- **GSAP replaces the CSS-keyframe animation system.** `app/components/motion/Reveal.tsx` (a
+  client wrapper doing `gsap.from(el, {opacity, y})` on mount, `as`-polymorphic so it can render
+  `<li>`/`<span>`/`<main>` without extra wrapper nodes) replaces the old `animate-fade-in-up` /
+  `animate-fade-in` keyframe classes everywhere they were used: `PageShell`, `Badge`, the
+  archive/runs/brief list staggers, the feedback toast, and the home page's two cards.
+  `app/components/motion/PulseRings.tsx` and the Logo's glow (`app/components/Logo.tsx`) use
+  GSAP's `repeat: -1` loops instead of CSS `animation: ... infinite`. Rejected animating
+  `box-shadow` directly for the logo glow (GSAP can interpolate it as a complex string, but it's
+  fragile against future edits) in favor of a separate scale/opacity glow layer — same visual
+  effect, a strictly safer GSAP primitive. Every animation still checks
+  `prefers-reduced-motion` via `matchMedia` in JS (the CSS media-query block this replaced is
+  gone; the "a reduce-motion user gets a fully static page" guarantee now lives in each
+  component instead of in `globals.css`).
+- **In-app assistant via Dify** (`app/api/chat/route.ts`, `app/components/ChatWidget.tsx`,
+  gated by `app/components/ChatWidgetGate.tsx`): a floating chat widget, GSAP-animated open/close,
+  that proxies to a Dify chat app's `/chat-messages` endpoint. The Dify API key stays server-side
+  only (never sent to the client), same pattern as `FEEDBACK_HMAC_SECRET`. The widget renders
+  nothing at all when `DIFY_API_URL`/`DIFY_API_KEY` are unset — verified by temporarily setting a
+  placeholder key: the proxy correctly reached Dify, got a real `401 unauthorized`, logged it
+  server-side, and the widget surfaced a clean "couldn't answer that just now" instead of
+  crashing. As of this entry, no real Dify app has been created yet for Research Pulse — the
+  user plans to create one and paste the real URL/key later. Scoped deliberately narrow: this is
+  a bare proxy, not a RAG pipeline over the brief/feedback data — grounding the assistant in
+  Research Pulse's own data would mean configuring a knowledge base on Dify's side, which is
+  outside this codebase's control and wasn't requested.

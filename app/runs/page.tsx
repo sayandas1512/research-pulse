@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { listRuns, listRunSteps } from "@/src/lib/runs-repo";
 import { getFeedbackStats } from "@/src/lib/feedback-repo";
 import { Badge, Card, EmptyState, PageHeader, PageShell } from "../components/ui";
+import { Reveal } from "../components/motion/Reveal";
 import RunNowButton from "./RunNowButton";
 
 function nextMondayTwoAmUtc(from: Date): Date {
@@ -78,7 +79,7 @@ async function RunsList() {
         );
 
         return (
-          <li key={run.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(idx * 40, 300)}ms` }}>
+          <Reveal as="li" key={run.id} delay={Math.min(idx * 40, 300)}>
             <Card>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -102,7 +103,7 @@ async function RunsList() {
               )}
               {run.error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">Run error: {run.error}</p>}
             </Card>
-          </li>
+          </Reveal>
         );
       })}
     </ul>

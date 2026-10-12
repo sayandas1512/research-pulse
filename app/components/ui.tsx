@@ -1,8 +1,13 @@
 import type { ReactNode } from "react";
+import { Reveal } from "./motion/Reveal";
 
 export function PageShell({ children, maxWidth = "3xl" }: { children: ReactNode; maxWidth?: "2xl" | "3xl" | "4xl" }) {
   const widths = { "2xl": "max-w-2xl", "3xl": "max-w-3xl", "4xl": "max-w-4xl" };
-  return <main className={`mx-auto w-full ${widths[maxWidth]} flex-1 animate-fade-in-up px-6 py-10`}>{children}</main>;
+  return (
+    <Reveal as="main" className={`mx-auto w-full ${widths[maxWidth]} flex-1 px-6 py-10`}>
+      {children}
+    </Reveal>
+  );
 }
 
 export function PageHeader({ title, description }: { title: string; description?: ReactNode }) {
@@ -43,11 +48,14 @@ export function Badge({
   className?: string;
 }) {
   return (
-    <span
-      className={`inline-flex animate-fade-in items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${badgeTones[tone]} ${className}`}
+    <Reveal
+      as="span"
+      y={0}
+      duration={0.25}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${badgeTones[tone]} ${className}`}
     >
       {children}
-    </span>
+    </Reveal>
   );
 }
 

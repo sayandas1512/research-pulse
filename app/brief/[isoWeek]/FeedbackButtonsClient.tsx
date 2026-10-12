@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Reveal } from "../../components/motion/Reveal";
 
 type Kind = "useful" | "not_relevant" | "saved";
 
@@ -49,10 +50,11 @@ export default function FeedbackButtonsClient({ urls }: { urls: Record<Kind, str
       </div>
 
       {toast && (
-        <div
+        <Reveal
+          as="div"
           role="status"
           aria-live="polite"
-          className={`fixed bottom-5 left-1/2 z-50 w-[min(92vw,380px)] -translate-x-1/2 animate-fade-in-up rounded-xl border px-4 py-3 text-sm shadow-lg ${
+          className={`fixed bottom-5 left-1/2 z-50 w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border px-4 py-3 text-sm shadow-lg ${
             toast.ok ? "border-[var(--accent)]/40 bg-[var(--surface)] text-[var(--foreground)]" : "border-red-300 bg-[var(--surface)] text-red-600"
           }`}
         >
@@ -70,7 +72,7 @@ export default function FeedbackButtonsClient({ urls }: { urls: Record<Kind, str
               .
             </p>
           )}
-        </div>
+        </Reveal>
       )}
     </>
   );

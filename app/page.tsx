@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { listBriefs } from "@/src/lib/runs-repo";
 import { Card } from "./components/ui";
+import { Reveal } from "./components/motion/Reveal";
+import { PulseRings } from "./components/motion/PulseRings";
 import { Logo } from "./components/Logo";
 import DataFlowDemo from "./components/DataFlowDemo";
 
@@ -28,47 +30,41 @@ async function LatestBriefCta() {
   );
 }
 
-function PulseRings() {
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
-      <span className="absolute h-14 w-14 rounded-full border border-[var(--accent)] animate-pulse-ring" />
-      <span className="absolute h-14 w-14 rounded-full border border-[var(--accent)] animate-pulse-ring [animation-delay:0.9s]" />
-      <span className="absolute h-14 w-14 rounded-full border border-[var(--accent)] animate-pulse-ring [animation-delay:1.8s]" />
-    </div>
-  );
-}
-
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col items-center gap-8 px-6 py-16">
-      <Card className="relative w-full max-w-md animate-fade-in-up overflow-hidden p-8 text-center">
-        <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
-          <PulseRings />
-          <Logo size={56} animated />
-        </div>
-        <span className="mt-5 inline-block rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent)]">
-          Welcome back, Kavita
-        </span>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight">Research Pulse</h1>
-        <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
-          Your weekly AI-research brief, organized by domain, short enough to read in under ten
-          minutes — what matters this week, without reading every preprint yourself.
-        </p>
-        <div className="mt-6 flex flex-col items-center">
-          <Suspense fallback={<span className="text-sm text-[var(--muted)]">Loading...</span>}>
-            <LatestBriefCta />
-          </Suspense>
-        </div>
-      </Card>
+      <Reveal className="w-full max-w-md">
+        <Card className="relative overflow-hidden p-8 text-center">
+          <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
+            <PulseRings />
+            <Logo size={56} animated />
+          </div>
+          <span className="mt-5 inline-block rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent)]">
+            Welcome back, Kavita
+          </span>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight">Research Pulse</h1>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+            Your weekly AI-research brief, organized by domain, short enough to read in under ten
+            minutes — what matters this week, without reading every preprint yourself.
+          </p>
+          <div className="mt-6 flex flex-col items-center">
+            <Suspense fallback={<span className="text-sm text-[var(--muted)]">Loading...</span>}>
+              <LatestBriefCta />
+            </Suspense>
+          </div>
+        </Card>
+      </Reveal>
 
-      <Card className="w-full max-w-md animate-fade-in-up p-6 [animation-delay:120ms]">
-        <p className="mb-1 text-sm font-semibold text-[var(--foreground)]">How it works</p>
-        <p className="mb-4 text-xs leading-relaxed text-[var(--muted)]">
-          Each week the pipeline scans new papers, scores them against Kavita&apos;s focus areas, and keeps
-          only what&apos;s worth her time.
-        </p>
-        <DataFlowDemo />
-      </Card>
+      <Reveal className="w-full max-w-md" delay={120}>
+        <Card className="p-6">
+          <p className="mb-1 text-sm font-semibold text-[var(--foreground)]">How it works</p>
+          <p className="mb-4 text-xs leading-relaxed text-[var(--muted)]">
+            Each week the pipeline scans new papers, scores them against Kavita&apos;s focus areas, and keeps
+            only what&apos;s worth her time.
+          </p>
+          <DataFlowDemo />
+        </Card>
+      </Reveal>
     </main>
   );
 }

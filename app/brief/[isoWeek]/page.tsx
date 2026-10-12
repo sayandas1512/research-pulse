@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { getBriefWithItemsDetailed, listRunSteps } from "@/src/lib/runs-repo";
 import { readTimeMinutes } from "@/src/lib/render";
 import { Badge, Card, EmptyState, Label, PageShell } from "../../components/ui";
+import { Reveal } from "../../components/motion/Reveal";
 import FeedbackButtons from "./FeedbackButtons";
 import MissedPaperForm from "./MissedPaperForm";
 
@@ -78,7 +79,7 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
             </div>
             <ul className="space-y-3">
               {rows.map((row, idx) => (
-                <li key={row.item.id} className="animate-fade-in-up" style={{ animationDelay: `${Math.min(idx * 50, 300)}ms` }}>
+                <Reveal as="li" key={row.item.id} delay={Math.min(idx * 50, 300)}>
                   <Card>
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <a
@@ -111,7 +112,7 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
                       <FeedbackButtons briefItemId={row.item.id} />
                     </Suspense>
                   </Card>
-                </li>
+                </Reveal>
               ))}
             </ul>
           </section>

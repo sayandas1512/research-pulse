@@ -1,7 +1,7 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "gsap";
 import { Badge } from "./ui";
 
 type DemoPaper = {
@@ -33,6 +33,8 @@ function scoreTone(score: number): "success" | "accent" | "neutral" {
 
 export default function DataFlowDemo() {
   const [step, setStep] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scrubRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -41,53 +43,65 @@ export default function DataFlowDemo() {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const ctx = gsap.context(() => {
+      const label = container.querySelector(".demo-label");
+      const items = container.querySelectorAll(".demo-item");
+
+      if (reduceMotion) {
+        if (label) gsap.set(label, { opacity: 1 });
+        gsap.set(items, { opacity: 1, y: 0 });
+        if (scrubRef.current) gsap.set(scrubRef.current, { width: "100%" });
+        return;
+      }
+
+      if (label) gsap.fromTo(label, { opacity: 0 }, { opacity: 1, duration: 0.3 });
+      gsap.fromTo(items, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.07, ease: "power2.out" });
+      if (scrubRef.current) {
+        gsap.fromTo(scrubRef.current, { width: "0%" }, { width: "100%", duration: STEP_MS / 1000, ease: "none" });
+      }
+    }, container);
+
+    return () => ctx.revert();
+  }, [step]);
+
   const shortlisted = PAPERS.filter((p) => p.score >= 80);
 
   return (
-    <div
-      className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-muted)]/40 p-4"
-      style={{ "--demo-step-ms": `${STEP_MS}ms` } as CSSProperties}
-    >
+    <div ref={containerRef} className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-muted)]/40 p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <span aria-hidden className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[var(--accent)]" />
-          <p key={step} className="animate-fade-in text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
-            {STEP_LABELS[step]}
-          </p>
+          <p className="demo-label text-xs font-medium uppercase tracking-wide text-[var(--muted)]">{STEP_LABELS[step]}</p>
         </div>
         <span className="shrink-0 font-mono text-[10px] text-[var(--muted)]">{step + 1}/3</span>
       </div>
 
       {step < 2 ? (
         <ul className="space-y-2">
-          {PAPERS.map((paper, idx) => (
+          {PAPERS.map((paper) => (
             <li
               key={paper.title}
-              className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)]/60 px-3 py-2 animate-fade-in-up"
-              style={{ animationDelay: `${idx * 140}ms` }}
+              className="demo-item flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)]/60 px-3 py-2"
             >
               <div className="min-w-0">
                 <p className="truncate text-sm text-[var(--foreground)]">{paper.title}</p>
                 <p className="text-xs text-[var(--muted)]">{paper.domain}</p>
               </div>
-              {step === 1 && (
-                <span
-                  className="shrink-0 animate-fade-in"
-                  style={{ animationDelay: `${idx * 140 + 150}ms` }}
-                >
-                  <Badge tone={scoreTone(paper.score)}>{paper.score}</Badge>
-                </span>
-              )}
+              {step === 1 && <Badge tone={scoreTone(paper.score)}>{paper.score}</Badge>}
             </li>
           ))}
         </ul>
       ) : (
         <ul className="space-y-2">
-          {shortlisted.map((paper, idx) => (
+          {shortlisted.map((paper) => (
             <li
               key={paper.title}
-              className="flex items-start gap-2.5 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-soft)] px-3 py-2.5 animate-fade-in-up"
-              style={{ animationDelay: `${idx * 120}ms` }}
+              className="demo-item flex items-start gap-2.5 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent-soft)] px-3 py-2.5"
             >
               <span aria-hidden className="mt-0.5 text-[var(--accent)]">
                 ✓
@@ -102,7 +116,7 @@ export default function DataFlowDemo() {
       )}
 
       <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-[var(--border)]">
-        <div key={step} className="animate-demo-scrub h-full rounded-full bg-[var(--accent)]" />
+        <div ref={scrubRef} className="h-full rounded-full bg-[var(--accent)]" />
       </div>
     </div>
   );

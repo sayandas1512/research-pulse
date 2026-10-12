@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import NavBar, { NavBarFallback } from "./NavBar";
+import ChatWidgetGate from "./components/ChatWidgetGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <NavBar />
         </Suspense>
         {children}
+        <ChatWidgetGate />
       </body>
     </html>
   );
