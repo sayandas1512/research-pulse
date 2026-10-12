@@ -5,7 +5,7 @@ import { draftDomain } from "@/src/lib/gemini";
 const BodySchema = z.object({ description: z.string().min(1) });
 
 export async function POST(request: Request) {
-  const geminiApiKey = process.env.GEMINI_API_KEY;
+  const geminiApiKey = process.env.OPENROUTER_API_KEY;
   const geminiModel = process.env.GEMINI_MODEL;
   if (!geminiApiKey || !geminiModel) {
     return NextResponse.json({ error: "Server misconfigured: missing Gemini env vars" }, { status: 500 });

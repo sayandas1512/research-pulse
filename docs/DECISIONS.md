@@ -434,3 +434,24 @@ ticker, hand-drawn highlights), and declined grain texture and drop caps. Fraunc
 only enabled on italics, so headlines stay calm and the quirk shows up as emphasis. The ticker
 and scribbles are fully rendered on the server and only animated by GSAP, so they still work
 without JS and under reduced motion (the ticker then simply stays still).
+
+## 2026-10-12 — Model calls moved to OpenRouter (Google models only); Veo demo reel
+
+The project's direct Google AI Studio keys are being retired, and the replacement access is an
+OpenRouter key with rules attached: Google models only, every request pinned to Google's own
+infrastructure (`provider.only: ["google-vertex", "google-ai-studio"]`, `allow_fallbacks:
+false`), key only in `OPENROUTER_API_KEY`. Rather than patch five call sites separately, added
+one gateway (`src/lib/llm.ts`) and pointed the judge, headline, domain draft, claim check and
+assistant at it. It refuses any model id that doesn't start with `google/`, and adds
+`require_parameters: true` when a JSON schema is sent, so a provider that can't honour
+structured output is never silently used. Kept the same model family the briefs were already
+produced with (`google/gemini-3.8-flash`, same price as 3.7) so scoring stays comparable across
+weeks. The old `thinkingBudget: 0` became `reasoning.effort: "minimal"`; OpenRouter's docs note
+Gemini 3 maps budgets to coarse thinking levels, so exact zero isn't available. Verified live:
+domain draft (strict JSON), a full preview run (58 fetched → 12 shortlisted → 3 picked with AI
+verdicts), headline, claim check and assistant.
+
+Demo reel: the user chose AI-generated Veo clips over screen recordings after seeing the
+trade-off. Generated with the cheapest suitable model (`google/veo-3.1-lite`, 720p, 8s, no
+audio) after quoting the cost. Because these are illustrative scenes, not the product UI, the
+reel is labelled as AI-generated and each clip's caption describes the real pipeline step.

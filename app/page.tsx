@@ -11,6 +11,7 @@ import { AmbientBackground } from "./components/motion/AmbientBackground";
 import { Scribble } from "./components/motion/Scribble";
 import { Ticker } from "./components/motion/Ticker";
 import DataFlowDemo from "./components/DataFlowDemo";
+import DemoReel from "./components/DemoReel";
 
 function Stat({ value, label }: { value: number; label: string }) {
   return (
@@ -108,6 +109,18 @@ export default function HomePage() {
           <Suspense fallback={<p className="mt-12 text-sm text-[var(--muted)]">Loading this week&apos;s numbers…</p>}>
             <LatestBrief />
           </Suspense>
+        </div>
+      </section>
+
+      <section className="border-t border-[var(--rule)] px-6 py-20 lg:px-12">
+        <div className="mx-auto max-w-4xl">
+          <Reveal>
+            <Kicker>See it in action</Kicker>
+            <h2 className="mb-10 font-serif text-4xl leading-[1.05] tracking-tight">
+              A week of research, <em>distilled</em>.
+            </h2>
+          </Reveal>
+          <DemoReel />
         </div>
       </section>
 

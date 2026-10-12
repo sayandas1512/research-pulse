@@ -1,7 +1,7 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
 import { fetchWithTimeout, RateLimiter, userAgent, withRetry } from "./limits";
 import { geminiCallLimiter, type JudgeCallCounter } from "./gemini";
+import { chatCompletion } from "./llm";
 
 const MAX_FULL_TEXT_CHARS = 18_000;
 
@@ -54,12 +54,13 @@ export interface ClaimCheckResult {
 }
 
 const RESPONSE_SCHEMA = {
-  type: Type.OBJECT,
+  type: "object",
   properties: {
-    supported: { type: Type.STRING, enum: ["yes", "partial", "no", "unclear"] },
-    note: { type: Type.STRING },
+    supported: { type: "string", enum: ["yes", "partial", "no", "unclear"] },
+    note: { type: "string" },
   },
   required: ["supported", "note"],
+  additionalProperties: false,
 };
 
 const SYSTEM_PROMPT = `You check whether a one-sentence claim about an AI research paper is actually
@@ -90,7 +91,6 @@ export async function verifyClaim(
   await geminiCallLimiter.wait();
   counter.count += 1;
 
-  const ai = new GoogleGenAI({ apiKey });
   const usedFullText = fullText !== null;
   const contents = JSON.stringify({
     title: paperTitle,
@@ -100,22 +100,22 @@ export async function verifyClaim(
   });
 
   try {
-    const response = await withRetry(
+    const text = await withRetry(
       () =>
-        ai.models.generateContent({
+        chatCompletion({
+          apiKey,
           model,
-          contents,
-          config: {
-            systemInstruction: SYSTEM_PROMPT,
-            temperature: 0.1,
-            responseMimeType: "application/json",
-            responseSchema: RESPONSE_SCHEMA,
-            thinkingConfig: { thinkingBudget: 0 },
-          },
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: contents },
+          ],
+          temperature: 0.1,
+          jsonSchema: { name: "claim_check", schema: RESPONSE_SCHEMA },
+          disableReasoning: true,
         }),
       { retries: 2, baseDelayMs: 1_500, isRetryable: (e) => e instanceof Error && /429|503/.test(e.message) },
     );
-    const parsed = ClaimCheckSchema.safeParse(JSON.parse(response.text ?? ""));
+    const parsed = ClaimCheckSchema.safeParse(JSON.parse(text));
     if (!parsed.success) return null;
     return { ...parsed.data, usedFullText };
   } catch {

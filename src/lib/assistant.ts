@@ -1,7 +1,7 @@
-import { GoogleGenAI } from "@google/genai";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { withRetry } from "./limits";
+import { chatCompletion } from "./llm";
 
 const ROOT = process.cwd();
 
@@ -98,27 +98,26 @@ export async function askAssistant(
   model: string,
   liveContext: string,
 ): Promise<AssistantResult> {
-  const ai = new GoogleGenAI({ apiKey });
   const recent = messages.slice(-MAX_HISTORY_TURNS);
-  const contents = recent.map((m) => ({
-    role: m.role === "assistant" ? "model" : "user",
-    parts: [{ text: m.text }],
-  }));
 
   try {
-    const response = await withRetry(
+    const answer = await withRetry(
       () =>
-        ai.models.generateContent({
+        chatCompletion({
+          apiKey,
           model,
-          contents,
-          config: {
-            systemInstruction: `${buildSystemPrompt()}\n\n--- THIS WEEK'S BRIEF (live from the database) ---\n${liveContext}`,
-            temperature: 0.2,
-          },
+          messages: [
+            {
+              role: "system",
+              content: `${buildSystemPrompt()}\n\n--- THIS WEEK'S BRIEF (live from the database) ---\n${liveContext}`,
+            },
+            ...recent.map((m) => ({ role: m.role, content: m.text })),
+          ],
+          temperature: 0.2,
         }),
       { retries: 2, baseDelayMs: 1_500, isRetryable: (e) => e instanceof Error && /429|503/.test(e.message) },
     );
-    return { answer: response.text ?? null };
+    return { answer: answer || null };
   } catch (error) {
     return { answer: null, error: error instanceof Error ? error.message : String(error) };
   }

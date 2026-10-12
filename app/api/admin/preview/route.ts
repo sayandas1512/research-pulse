@@ -22,7 +22,7 @@ const BodySchema = z.union([
 
 export async function POST(request: Request) {
   const contactEmail = process.env.CONTACT_EMAIL;
-  const geminiApiKey = process.env.GEMINI_API_KEY;
+  const geminiApiKey = process.env.OPENROUTER_API_KEY;
   const geminiModel = process.env.GEMINI_MODEL;
   if (!contactEmail || !geminiApiKey || !geminiModel) {
     return NextResponse.json({ error: "Server misconfigured: missing required env vars" }, { status: 500 });

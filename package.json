@@ -16,7 +16,6 @@
     "backtest-report": "tsx scripts/backtest-report.ts"
   },
   "dependencies": {
-    "@google/genai": "^2.28.0",
     "@neondatabase/serverless": "^1.2.0",
     "@vercel/functions": "^3.9.11",
     "drizzle-orm": "^0.45.4",

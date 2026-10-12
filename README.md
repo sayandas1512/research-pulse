@@ -24,7 +24,7 @@ Vercel Cron (Mon 02:00 UTC) / "Run now" button
 ```
 
 Stack: Next.js 16 (App Router) + TypeScript strict on Vercel Hobby; Neon Postgres (Drizzle ORM);
-`@google/genai` (Gemini); `resend` (email, with an SMTP/nodemailer fallback adapter); `zod`;
+Gemini via OpenRouter (plain `fetch`, Google models only); `resend` (email, with an SMTP/nodemailer fallback adapter); `zod`;
 `fast-xml-parser`; `vitest`.
 
 ## Setup (local development)
@@ -39,9 +39,11 @@ Stack: Next.js 16 (App Router) + TypeScript strict on Vercel Hobby; Neon Postgre
 
 See `.env.example` for the full list. The ones you must obtain yourself:
 
-- `GEMINI_API_KEY` — free key from [Google AI Studio](https://aistudio.google.com/apikey).
-  `GEMINI_MODEL` is resolved once at setup time (see `docs/SPIKES.md`) rather than hard-coded,
-  since Google ships new Flash versions regularly.
+- `OPENROUTER_API_KEY` — an [OpenRouter](https://openrouter.ai) key. Every model call goes
+  through OpenRouter's chat-completions API (`src/lib/llm.ts`), restricted to Google models and
+  pinned to Google's own infrastructure (`provider.only: ["google-vertex", "google-ai-studio"]`,
+  no fallbacks). `GEMINI_MODEL` is the OpenRouter model id (e.g. `google/gemini-3.8-flash`) and
+  is set in env rather than hard-coded, since Google ships new Flash versions regularly.
 - `DATABASE_URL` — a Neon Postgres pooled connection string (free tier).
 - `RESEND_API_KEY` — free key from [resend.com](https://resend.com). Note: Resend's free tier can
   only send to the account owner's own verified email unless you verify a custom domain — see
@@ -90,8 +92,8 @@ to re-add from the project's git history if graded strictly against the brief's 
 grep -rn "anthropic\|claude\|openai\|OPENAI" src/ app/ scripts/ --include="*.ts" --include="*.tsx"
 ```
 
-Every AI call in runtime code goes through `src/lib/gemini.ts` (`@google/genai`, model from
-`GEMINI_MODEL`).
+Every AI call in runtime code goes through `src/lib/llm.ts` (OpenRouter chat completions,
+Google models only, pinned to Google infrastructure; model from `GEMINI_MODEL`).
 
 ## Project docs
 

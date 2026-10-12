@@ -55,7 +55,7 @@ async function runDomain(domainName: string, dry: boolean) {
   }
 
   const contactEmail = requireEnv("CONTACT_EMAIL");
-  const geminiApiKey = requireEnv("GEMINI_API_KEY");
+  const geminiApiKey = requireEnv("OPENROUTER_API_KEY");
   const geminiModel = requireEnv("GEMINI_MODEL");
 
   const window = weeklyWindow(new Date());

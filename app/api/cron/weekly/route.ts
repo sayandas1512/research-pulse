@@ -35,7 +35,7 @@ async function handle(request: Request) {
     const result = await runWeeklyOrchestrator({
       trigger: "cron",
       contactEmail: requireEnv("CONTACT_EMAIL"),
-      geminiApiKey: requireEnv("GEMINI_API_KEY"),
+      geminiApiKey: requireEnv("OPENROUTER_API_KEY"),
       geminiModel: requireEnv("GEMINI_MODEL"),
       s2ApiKey: process.env.S2_API_KEY,
       githubToken: process.env.GITHUB_TOKEN,

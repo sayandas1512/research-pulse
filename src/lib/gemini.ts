@@ -1,9 +1,9 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { Candidate, DomainConfig, JudgeVerdict } from "./types";
 import { RateLimiter, sleep, withRetry } from "./limits";
+import { chatCompletion } from "./llm";
 
 const CONTENT_DIR = path.join(process.cwd(), "content");
 
@@ -33,26 +33,28 @@ const VerdictSchema = z.object({
 const VerdictsResponseSchema = z.object({ verdicts: z.array(VerdictSchema) });
 
 const RESPONSE_SCHEMA = {
-  type: Type.OBJECT,
+  type: "object",
   properties: {
     verdicts: {
-      type: Type.ARRAY,
+      type: "array",
       items: {
-        type: Type.OBJECT,
+        type: "object",
         properties: {
-          arxiv_id: { type: Type.STRING },
-          significance: { type: Type.INTEGER },
-          paper_type: { type: Type.STRING, enum: [...PAPER_TYPES] },
-          evidence_strength: { type: Type.STRING, enum: [...EVIDENCE_STRENGTHS] },
-          so_what: { type: Type.STRING },
-          caveat: { type: Type.STRING },
-          action: { type: Type.STRING, enum: [...ACTIONS] },
+          arxiv_id: { type: "string" },
+          significance: { type: "integer" },
+          paper_type: { type: "string", enum: [...PAPER_TYPES] },
+          evidence_strength: { type: "string", enum: [...EVIDENCE_STRENGTHS] },
+          so_what: { type: "string" },
+          caveat: { type: "string" },
+          action: { type: "string", enum: [...ACTIONS] },
         },
         required: ["arxiv_id", "significance", "paper_type", "evidence_strength", "so_what", "caveat", "action"],
+        additionalProperties: false,
       },
     },
   },
   required: ["verdicts"],
+  additionalProperties: false,
 };
 
 export const PROMPT_VERSION = "v1";
@@ -122,7 +124,6 @@ export async function judgeDomain(
   }
 
   const { judgeSystem, rubric } = loadPrompts();
-  const ai = new GoogleGenAI({ apiKey });
   const userPrompt = JSON.stringify({
     domain: domain.name,
     significance_note: domain.significanceNote,
@@ -136,24 +137,21 @@ export async function judgeDomain(
     counter.count += 1;
     const contents = repairNote ? `${userPrompt}\n\nREPAIR INSTRUCTION: ${repairNote}` : userPrompt;
     return withRetry(
-      async () => {
-        const response = await ai.models.generateContent({
+      () =>
+        chatCompletion({
+          apiKey,
           model,
-          contents,
-          config: {
-            systemInstruction: judgeSystem,
-            temperature: 0.2,
-            responseMimeType: "application/json",
-            responseSchema: RESPONSE_SCHEMA,
-            // Judging a short rubric against 12 structured summaries doesn't need the model's
-            // extended "thinking" — Stage 0 measured 476 thinking tokens vs. 73 output tokens on
-            // a single-paper test, which dominates latency. Disabling it cuts per-domain time
-            // noticeably; see docs/DECISIONS.md for the quality spot-check before keeping this.
-            thinkingConfig: { thinkingBudget: 0 },
-          },
-        });
-        return response.text ?? "";
-      },
+          messages: [
+            { role: "system", content: judgeSystem },
+            { role: "user", content: contents },
+          ],
+          temperature: 0.2,
+          jsonSchema: { name: "verdicts", schema: RESPONSE_SCHEMA },
+          // Judging a short rubric against 12 structured summaries doesn't need the model's
+          // extended "thinking" — Stage 0 measured 476 thinking tokens vs. 73 output tokens on
+          // a single-paper test, which dominates latency. See docs/DECISIONS.md.
+          disableReasoning: true,
+        }),
       {
         retries: 3,
         baseDelayMs: 2_000,
@@ -230,20 +228,20 @@ export async function generateHeadline(
     return { text: null, aiAvailable: false, error: "Gemini call budget exceeded" };
   }
   const prompt = readFileSync(path.join(CONTENT_DIR, "headline.prompt.md"), "utf8");
-  const ai = new GoogleGenAI({ apiKey });
   await geminiCallLimiter.wait();
   counter.count += 1;
   try {
-    const response = await withRetry(
+    const text = await withRetry(
       () =>
-        ai.models.generateContent({
+        chatCompletion({
+          apiKey,
           model,
-          contents: `${prompt}\n\nPicks:\n${picksSummary}`,
-          config: { temperature: 0.3 },
+          messages: [{ role: "user", content: `${prompt}\n\nPicks:\n${picksSummary}` }],
+          temperature: 0.3,
         }),
       { retries: 2, baseDelayMs: 2_000, isRetryable: (e) => e instanceof Error && /429|503/.test(e.message) },
     );
-    return { text: response.text ?? null, aiAvailable: true };
+    return { text: text || null, aiAvailable: true };
   } catch (error) {
     return { text: null, aiAvailable: false, error: error instanceof Error ? error.message : String(error) };
   }
@@ -264,15 +262,16 @@ const DomainDraftSchema = z.object({
 });
 
 const DOMAIN_DRAFT_RESPONSE_SCHEMA = {
-  type: Type.OBJECT,
+  type: "object",
   properties: {
-    name: { type: Type.STRING },
-    arxiv_categories: { type: Type.ARRAY, items: { type: Type.STRING } },
-    include_keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-    exclude_keywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-    significance_note: { type: Type.STRING },
+    name: { type: "string" },
+    arxiv_categories: { type: "array", items: { type: "string" } },
+    include_keywords: { type: "array", items: { type: "string" } },
+    exclude_keywords: { type: "array", items: { type: "string" } },
+    significance_note: { type: "string" },
   },
   required: ["name", "arxiv_categories", "include_keywords", "exclude_keywords", "significance_note"],
+  additionalProperties: false,
 };
 
 export interface DomainDraft {
@@ -296,23 +295,25 @@ export async function draftDomain(
   model: string,
 ): Promise<DomainDraftResult> {
   const prompt = readFileSync(path.join(CONTENT_DIR, "domain-draft.prompt.md"), "utf8");
-  const ai = new GoogleGenAI({ apiKey });
   try {
-    const response = await withRetry(
+    const text = await withRetry(
       () =>
-        ai.models.generateContent({
+        chatCompletion({
+          apiKey,
           model,
-          contents: `Whitelist of allowed arxiv_categories prefixes: cs.*, stat.ML, eess.*, math.*\n\nDescription: ${description}`,
-          config: {
-            systemInstruction: prompt,
-            temperature: 0.4,
-            responseMimeType: "application/json",
-            responseSchema: DOMAIN_DRAFT_RESPONSE_SCHEMA,
-          },
+          messages: [
+            { role: "system", content: prompt },
+            {
+              role: "user",
+              content: `Whitelist of allowed arxiv_categories prefixes: cs.*, stat.ML, eess.*, math.*\n\nDescription: ${description}`,
+            },
+          ],
+          temperature: 0.4,
+          jsonSchema: { name: "domain_draft", schema: DOMAIN_DRAFT_RESPONSE_SCHEMA },
         }),
       { retries: 2, baseDelayMs: 1_500, isRetryable: (e) => e instanceof Error && /429|503/.test(e.message) },
     );
-    const json = JSON.parse(response.text ?? "");
+    const json = JSON.parse(text);
     const parsed = DomainDraftSchema.safeParse(json);
     if (!parsed.success) {
       return { draft: null, aiAvailable: false, error: "Draft response failed validation" };
