@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/settings", label: "Settings" },
   { href: "/runs", label: "Runs" },
   { href: "/log", label: "Log" },
+  { href: "/export", label: "Export" },
   { href: "/backtest", label: "Backtest" },
 ];
 
