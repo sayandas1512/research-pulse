@@ -9,13 +9,13 @@ const KIND_LABEL: Record<FeedbackKind, string> = {
   missed: "Reported as missed",
 };
 
-function htmlPage(title: string, body: string, status = 200) {
+function htmlPage(title: string, body: string, status = 200, footer = '<a href="/">Back to Research Pulse</a>') {
   return new NextResponse(
     `<!doctype html><html><head><meta charset="utf-8"><title>${title}</title>
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <style>body{font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:80px auto;padding:0 20px;color:#111;text-align:center;}
       a{color:#1d4ed8;}</style></head>
-      <body><h1>${title}</h1><p>${body}</p><p><a href="/">Back to Research Pulse</a></p></body></html>`,
+      <body><h1>${title}</h1><p>${body}</p><p>${footer}</p></body></html>`,
     { status, headers: { "Content-Type": "text/html; charset=utf-8" } },
   );
 }
@@ -38,5 +38,10 @@ export async function GET(request: Request) {
 
   await recordFeedback({ briefItemId: item.id, arxivId: item.arxivId, kind: payload.kind });
 
-  return htmlPage(KIND_LABEL[payload.kind], "Thanks — your feedback has been recorded.");
+  return htmlPage(
+    KIND_LABEL[payload.kind],
+    "Thanks — your feedback has been recorded.",
+    200,
+    'See it anytime on <a href="/runs">Run health</a> (counts) or <a href="/log">Log</a> (per paper) · <a href="/">Back to Research Pulse</a>',
+  );
 }

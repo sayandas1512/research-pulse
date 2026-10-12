@@ -7,7 +7,7 @@ import { Logo } from "./components/Logo";
 const LINKS = [
   { href: "/archive", label: "Archive" },
   { href: "/settings", label: "Settings" },
-  { href: "/runs", label: "Runs" },
+  { href: "/runs", label: "Run health" },
   { href: "/log", label: "Log" },
   { href: "/export", label: "Export" },
   { href: "/backtest", label: "Backtest" },
