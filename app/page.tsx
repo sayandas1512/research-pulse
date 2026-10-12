@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { listBriefs } from "@/src/lib/runs-repo";
 import { Card } from "./components/ui";
 import { Logo } from "./components/Logo";
+import DataFlowDemo from "./components/DataFlowDemo";
 
 async function LatestBriefCta() {
   const briefs = await listBriefs();
@@ -39,7 +40,7 @@ function PulseRings() {
 
 export default function HomePage() {
   return (
-    <main className="flex flex-1 items-center justify-center px-6 py-16">
+    <main className="flex flex-1 flex-col items-center gap-8 px-6 py-16">
       <Card className="relative w-full max-w-md animate-fade-in-up overflow-hidden p-8 text-center">
         <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
           <PulseRings />
@@ -58,6 +59,15 @@ export default function HomePage() {
             <LatestBriefCta />
           </Suspense>
         </div>
+      </Card>
+
+      <Card className="w-full max-w-md animate-fade-in-up p-6 [animation-delay:120ms]">
+        <p className="mb-1 text-sm font-semibold text-[var(--foreground)]">How it works</p>
+        <p className="mb-4 text-xs leading-relaxed text-[var(--muted)]">
+          Each week the pipeline scans new papers, scores them against Kavita&apos;s focus areas, and keeps
+          only what&apos;s worth her time.
+        </p>
+        <DataFlowDemo />
       </Card>
     </main>
   );
