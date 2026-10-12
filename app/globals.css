@@ -93,11 +93,29 @@ body {
   animation: pulse-ring 2.8s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
 }
 
+@keyframes demo-scrub {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-demo-scrub {
+  animation: demo-scrub var(--demo-step-ms, 2600ms) linear forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in-up,
   .animate-fade-in,
   .animate-pulse-glow,
-  .animate-pulse-ring {
+  .animate-pulse-ring,
+  .animate-demo-scrub {
     animation: none;
+  }
+
+  .animate-demo-scrub {
+    width: 100%;
   }
 }

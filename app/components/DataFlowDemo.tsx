@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import { Badge } from "./ui";
 
@@ -43,8 +44,19 @@ export default function DataFlowDemo() {
   const shortlisted = PAPERS.filter((p) => p.score >= 80);
 
   return (
-    <div>
-      <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">{STEP_LABELS[step]}</p>
+    <div
+      className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-muted)]/40 p-4"
+      style={{ "--demo-step-ms": `${STEP_MS}ms` } as CSSProperties}
+    >
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <span aria-hidden className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[var(--accent)]" />
+          <p key={step} className="animate-fade-in text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+            {STEP_LABELS[step]}
+          </p>
+        </div>
+        <span className="shrink-0 font-mono text-[10px] text-[var(--muted)]">{step + 1}/3</span>
+      </div>
 
       {step < 2 ? (
         <ul className="space-y-2">
@@ -88,6 +100,10 @@ export default function DataFlowDemo() {
           ))}
         </ul>
       )}
+
+      <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-[var(--border)]">
+        <div key={step} className="animate-demo-scrub h-full rounded-full bg-[var(--accent)]" />
+      </div>
     </div>
   );
 }
