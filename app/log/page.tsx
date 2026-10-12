@@ -146,7 +146,7 @@ async function LogTableResolver({ searchParamsPromise }: { searchParamsPromise: 
 export default function LogPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   return (
     <PageShell maxWidth="4xl">
-      <PageHeader title="Paper log" description="Every paper that has appeared in a brief, searchable and exportable." />
+      <PageHeader kicker="Read · Every pick, searchable" title="Paper log" description="Every paper that has appeared in a brief, searchable and exportable." />
       <Suspense fallback={<p className="text-sm text-[var(--muted)]">Loading filters...</p>}>
         <LogFiltersResolver searchParamsPromise={searchParams} />
       </Suspense>

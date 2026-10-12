@@ -36,8 +36,9 @@ Updated at the end of each stage.
 
 | Addition | Status | Notes |
 |---|---|---|
-| GSAP motion system | Shipped | Replaces the CSS-keyframe animations app-wide (`app/components/motion/Reveal.tsx`, `PulseRings.tsx`, `Logo.tsx`'s glow). Respects `prefers-reduced-motion` via JS in each component. |
-| In-app assistant (Dify) | Shipped, live | `app/api/chat/route.ts` proxies to a Dify Chatbot app ("Research Pulse Assistant"); widget (`ChatWidget.tsx`) is gated by `DIFY_API_URL`/`DIFY_API_KEY`, set in Vercel production env. System prompt grounds it in the actual pipeline stages and app routes. Verified live, both locally and on the production deployment, with real questions returning accurate, route-specific answers (e.g. correctly pointing to `/export` and `/brief/[week]` for saved picks). No knowledge base attached — see `docs/DECISIONS.md` for the accuracy caveat this implies. |
+| GSAP motion system | Shipped | `app/components/motion/`: ScrollTrigger reveals (`Reveal`), word-by-word hero headline (`SplitHeadline`, SplitText), count-up stats (`CountUp`), magnetic nav/CTA (`Magnetic`), hover lift/tilt cards (`HoverCard`), ambient orbs + travelling pulse line (`AmbientBackground`), sliding active-nav indicator (`NavBar.tsx`). Every effect is skipped under `prefers-reduced-motion`; hover effects only run with a fine pointer. |
+| Editorial redesign + right-hand nav | Shipped | Instrument Serif display type, warm paper palette with ink-blue accent (light + dark). Navigation moved to a right-hand column grouped Read / Manage (top bar on small screens). Home page shows the latest issue's real funnel numbers and headline summary. |
+| In-app assistant (self-hosted Gemini) | Shipped, live | `app/api/chat/route.ts` → `src/lib/assistant.ts`, using the pipeline's existing `GEMINI_API_KEY`/`GEMINI_MODEL`. The project docs, prompts and selection code are injected as reference material (full context, no retrieval), plus the latest brief's picks loaded live from the database per request. Prompt enforces plain-language, short answers for a non-engineer, literal-numbers-only grounding, and Research Pulse-only scope. Replaced an earlier Dify integration — see `docs/DECISIONS.md`. |
 
 ## Known deviations from the brief (see `docs/DECISIONS.md` for full reasoning)
 

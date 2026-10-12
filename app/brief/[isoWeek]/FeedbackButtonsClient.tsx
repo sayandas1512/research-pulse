@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Reveal } from "../../components/motion/Reveal";
 
 type Kind = "useful" | "not_relevant" | "saved";
@@ -49,31 +50,38 @@ export default function FeedbackButtonsClient({ urls }: { urls: Record<Kind, str
         ))}
       </div>
 
-      {toast && (
-        <Reveal
-          as="div"
-          role="status"
-          aria-live="polite"
-          className={`fixed bottom-5 left-1/2 z-50 w-[min(92vw,380px)] -translate-x-1/2 rounded-xl border px-4 py-3 text-sm shadow-lg ${
-            toast.ok ? "border-[var(--accent)]/40 bg-[var(--surface)] text-[var(--foreground)]" : "border-red-300 bg-[var(--surface)] text-red-600"
-          }`}
-        >
-          <p className="font-medium">{toast.title}</p>
-          {toast.ok && (
-            <p className="mt-1 text-xs text-[var(--muted)]">
-              See it anytime on{" "}
-              <a href="/runs" className="text-[var(--accent)] hover:underline">
-                Run health
-              </a>{" "}
-              or{" "}
-              <a href="/log" className="text-[var(--accent)] hover:underline">
-                Log
-              </a>
-              .
-            </p>
-          )}
-        </Reveal>
-      )}
+      {/* Portaled to <body>: the card around these buttons is GSAP-transformed, and a transformed
+          ancestor would make this "fixed" toast position relative to the card, not the screen. */}
+      {toast &&
+        createPortal(
+          <Reveal
+            as="div"
+            scroll={false}
+            role="status"
+            aria-live="polite"
+            className={`fixed bottom-5 left-1/2 z-50 w-[min(92vw,380px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm shadow-lg lg:ml-[-8rem] ${
+              toast.ok
+                ? "border-[var(--accent)]/40 bg-[var(--surface)] text-[var(--foreground)]"
+                : "border-red-300 bg-[var(--surface)] text-red-600"
+            }`}
+          >
+            <p className="font-medium">{toast.title}</p>
+            {toast.ok && (
+              <p className="mt-1 text-xs text-[var(--muted)]">
+                See it anytime on{" "}
+                <a href="/runs" className="text-[var(--accent)] hover:underline">
+                  Run health
+                </a>{" "}
+                or{" "}
+                <a href="/log" className="text-[var(--accent)] hover:underline">
+                  Log
+                </a>
+                .
+              </p>
+            )}
+          </Reveal>,
+          document.body,
+        )}
     </>
   );
 }

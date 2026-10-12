@@ -113,7 +113,7 @@ async function RunsList() {
 export default function RunsPage() {
   return (
     <PageShell maxWidth="4xl">
-      <PageHeader title="Run health" />
+      <PageHeader kicker="Manage · Pipeline" title="Run health" />
       <Suspense fallback={<p className="text-sm text-[var(--muted)]">Loading...</p>}>
         <NextCronLine />
       </Suspense>

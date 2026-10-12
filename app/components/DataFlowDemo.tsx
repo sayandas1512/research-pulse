@@ -11,23 +11,23 @@ type DemoPaper = {
 };
 
 const PAPERS: DemoPaper[] = [
-  { title: "Scaling Laws for Multi-Agent Coordination", domain: "Multi-agent systems", score: 91 },
-  { title: "Benchmarking Long-Context Retrieval in Production LLMs", domain: "Applied AI", score: 84 },
-  { title: "A Survey of Prompt-Injection Defenses", domain: "Safety & governance", score: 76 },
-  { title: "Efficient Fine-Tuning via Low-Rank Adapters v3", domain: "Model efficiency", score: 38 },
+  { title: "Scaling Laws for Multi-Agent Coordination", domain: "Multi-agent systems", score: 9 },
+  { title: "Benchmarking Long-Context Retrieval in Production LLMs", domain: "Applied AI", score: 8 },
+  { title: "A Survey of Prompt-Injection Defenses", domain: "Safety & governance", score: 7 },
+  { title: "Efficient Fine-Tuning via Low-Rank Adapters v3", domain: "Model efficiency", score: 4 },
 ];
 
 const STEP_LABELS = [
   "Scanning this week's papers",
-  "Scoring relevance to Kavita's focus areas",
+  "Scoring significance, 0–10 (6+ makes the cut)",
   "Distilling the top picks into a brief",
 ];
 
 const STEP_MS = 2600;
 
 function scoreTone(score: number): "success" | "accent" | "neutral" {
-  if (score >= 85) return "success";
-  if (score >= 60) return "accent";
+  if (score >= 8) return "success";
+  if (score >= 6) return "accent";
   return "neutral";
 }
 
@@ -69,14 +69,14 @@ export default function DataFlowDemo() {
     return () => ctx.revert();
   }, [step]);
 
-  const shortlisted = PAPERS.filter((p) => p.score >= 80);
+  const shortlisted = PAPERS.filter((p) => p.score >= 6);
 
   return (
-    <div ref={containerRef} className="relative overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface-muted)]/40 p-4">
+    <div ref={containerRef} className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background)] p-4">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <span aria-hidden className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-[var(--accent)]" />
-          <p className="demo-label text-xs font-medium uppercase tracking-wide text-[var(--muted)]">{STEP_LABELS[step]}</p>
+          <p className="demo-label font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--muted)]">{STEP_LABELS[step]}</p>
         </div>
         <span className="shrink-0 font-mono text-[10px] text-[var(--muted)]">{step + 1}/3</span>
       </div>
@@ -86,13 +86,13 @@ export default function DataFlowDemo() {
           {PAPERS.map((paper) => (
             <li
               key={paper.title}
-              className="demo-item flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)]/60 px-3 py-2"
+              className="demo-item flex items-center justify-between gap-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2"
             >
               <div className="min-w-0">
                 <p className="truncate text-sm text-[var(--foreground)]">{paper.title}</p>
                 <p className="text-xs text-[var(--muted)]">{paper.domain}</p>
               </div>
-              {step === 1 && <Badge tone={scoreTone(paper.score)}>{paper.score}</Badge>}
+              {step === 1 && <Badge tone={scoreTone(paper.score)}>{paper.score}/10</Badge>}
             </li>
           ))}
         </ul>
@@ -107,8 +107,8 @@ export default function DataFlowDemo() {
                 ✓
               </span>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-[var(--foreground)]">{paper.title}</p>
-                <p className="text-xs text-[var(--muted)]">{paper.domain} · relevance {paper.score}</p>
+                <p className="font-serif text-base leading-snug text-[var(--foreground)]">{paper.title}</p>
+                <p className="text-xs text-[var(--muted)]">{paper.domain} · significance {paper.score}/10</p>
               </div>
             </li>
           ))}

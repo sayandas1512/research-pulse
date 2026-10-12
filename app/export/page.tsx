@@ -97,6 +97,7 @@ export default function ExportPage({ searchParams }: { searchParams: Promise<Sea
   return (
     <PageShell maxWidth="4xl">
       <PageHeader
+        kicker="Read · For your clients"
         title="Client export"
         description='Turns everything marked "Save for client" into a ready-to-send digest, grouped by domain.'
       />

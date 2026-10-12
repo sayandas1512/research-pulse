@@ -259,3 +259,31 @@ export async function listRunSteps(runId: string) {
   const db = getDb();
   return db.select().from(runSteps).where(eq(runSteps.runId, runId));
 }
+
+/** Latest brief plus its run's funnel totals (summed across completed domains) — the
+ * home page's "this week, by the numbers". */
+export async function getLatestBriefSummary() {
+  const db = getDb();
+  const allBriefs = await listBriefs();
+  const latest = allBriefs[0];
+  if (!latest) return null;
+
+  const steps = await listRunSteps(latest.runId);
+  const complete = steps.filter((s) => s.status === "complete");
+  const totals = complete.reduce(
+    (acc, s) => {
+      const counts = (s.counts as Record<string, number> | null) ?? {};
+      acc.fetched += counts.fetched ?? 0;
+      acc.shortlisted += counts.shortlisted ?? 0;
+      acc.picked += counts.picked ?? 0;
+      return acc;
+    },
+    { fetched: 0, shortlisted: 0, picked: 0 },
+  );
+
+  // "Picked" counts what actually made the brief (after cross-domain dedupe and the word
+  // budget), not the per-domain pick counts, so the number matches what Kavita reads.
+  const items = await db.select({ id: briefItems.id }).from(briefItems).where(eq(briefItems.briefId, latest.id));
+
+  return { brief: latest, issueNumber: allBriefs.length, domains: complete.length, ...totals, picked: items.length };
+}

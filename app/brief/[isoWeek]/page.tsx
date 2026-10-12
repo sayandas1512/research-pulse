@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getBriefWithItemsDetailed, listRunSteps } from "@/src/lib/runs-repo";
 import { readTimeMinutes } from "@/src/lib/render";
-import { Badge, Card, EmptyState, Label, PageShell } from "../../components/ui";
+import { Badge, Card, EmptyState, Kicker, Label, PageShell } from "../../components/ui";
 import { Reveal } from "../../components/motion/Reveal";
 import FeedbackButtons from "./FeedbackButtons";
 import MissedPaperForm from "./MissedPaperForm";
@@ -52,26 +52,30 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
 
   return (
     <>
-      <div className="mb-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">Research Pulse — {isoWeek}</h1>
+      <div className="mb-12 border-b border-[var(--rule)] pb-8">
+        <Kicker>
+          The weekly brief · {readTimeMinutes(brief.wordCount)} min read · {items.length} picks
+        </Kicker>
+        <div className="flex flex-wrap items-end gap-3">
+          <h1 className="font-serif text-5xl leading-none tracking-tight">
+            Week <em className="text-[var(--accent)]">{isoWeek}</em>
+          </h1>
           <Badge tone={BRIEF_STATUS_TONE[brief.status as keyof typeof BRIEF_STATUS_TONE] ?? "neutral"}>
             {brief.status}
           </Badge>
         </div>
-        <p className="mt-1 text-sm text-[var(--muted)]">{readTimeMinutes(brief.wordCount)} min read</p>
         {brief.headline && (
-          <Card className="mt-4 whitespace-pre-line bg-[var(--accent-soft)] text-sm leading-relaxed text-[var(--foreground)]">
+          <blockquote className="mt-6 whitespace-pre-line border-l-2 border-[var(--accent)] pl-5 font-serif text-xl leading-snug text-[var(--foreground)]">
             {brief.headline}
-          </Card>
+          </blockquote>
         )}
       </div>
 
       <div className="space-y-10">
         {[...byDomain.entries()].map(([domainName, rows]) => (
           <section key={domainName}>
-            <div className="mb-3 flex items-baseline justify-between">
-              <h2 className="text-base font-semibold">{domainName}</h2>
+            <div className="mb-4 flex items-baseline justify-between gap-4 border-b border-[var(--border)] pb-2">
+              <h2 className="font-serif text-2xl leading-tight">{domainName}</h2>
               <p className="text-xs text-[var(--muted)]">
                 Scanned {coverageByDomainName.get(domainName)?.scanned ?? 0}, shortlisted{" "}
                 {coverageByDomainName.get(domainName)?.shortlisted ?? 0}, shown {rows.length}
@@ -84,7 +88,7 @@ async function BriefContent({ isoWeek }: { isoWeek: string }) {
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <a
                         href={row.paper.absUrl}
-                        className="font-medium text-[var(--foreground)] hover:text-[var(--accent)]"
+                        className="font-serif text-xl leading-snug text-[var(--foreground)] hover:text-[var(--accent)]"
                       >
                         {row.paper.title}
                       </a>

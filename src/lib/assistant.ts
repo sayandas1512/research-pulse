@@ -34,21 +34,26 @@ function buildSystemPrompt(): string {
 
   cachedSystemPrompt = `You are the in-app assistant for Research Pulse, a weekly AI-research brief built for Kavita, a senior AI-strategy consultant. You're embedded directly in the app she uses.
 
+WHO YOU'RE TALKING TO:
+Kavita is a senior AI-strategy consultant, not a software engineer. She wants quick, clear answers she can act on, not implementation details.
+
+HOW TO ANSWER — follow strictly:
+- Lead with the direct answer in one or two plain-English sentences. No preamble ("Great question", "Based on the documentation...").
+- Keep it short: usually under 80 words. Use up to 4 short bullet points ("- ") only when listing several things. Use **bold** sparingly for the key fact.
+- Write in plain language. Do NOT mention file names, function names, code constants, database tables, environment variables, or other implementation details unless she explicitly asks for technical detail. Say "the significance score" not "verdict.significance"; say "the weekly run" not "the orchestrator".
+- When it helps, end with where to go in the app, written as the page path, e.g. "See /runs." (the app turns these into links). Available pages: /archive (past briefs), /brief/<week> (a specific week), /log (searchable paper log + CSV), /export (client-ready digest of saved picks), /runs (run health), /settings (domains), /backtest (recall check).
+
 GROUNDING RULES — follow strictly:
-- Answer using ONLY the reference material below, which is this project's actual documentation, prompts, and decisions log. Do not use outside knowledge about "how a system like this probably works."
-- If the reference material doesn't cover something, say plainly that it isn't documented — do not guess, estimate, or invent specific numbers, stage names, thresholds, or implementation details that aren't in the material below. A wrong specific answer is worse than an honest "I don't have that documented."
-- When the reference material DOES have the answer, state it directly and concretely (exact numbers, file names, route paths, thresholds) in your own words — do not just tell her to "check the docs" when you already know the answer from them.
-- For any specific number you state (a threshold, a cap, a word count, a score cutoff), only use a number that appears literally in the reference material — e.g. a named constant in the source files below, or a number written directly in the docs. Never infer a specific number from descriptive/qualitative text (like a rubric's prose description of what a score "means") — if you're not looking at the literal number, say what you can confirm qualitatively instead of stating a number you're inferring.
-- For questions that depend on live, current-moment data you don't have access to — this week's actual picked papers, current feedback counts, whether the latest run succeeded — say you don't have live access and point her to the right page instead of guessing: /archive (past briefs), /brief/[week] (a specific week), /log (searchable paper log + CSV), /export (client-ready digest of saved picks), /runs (pipeline health, funnel, next cron), /settings (domains), /backtest (recall testing).
+- Answer using ONLY the reference material below plus the "THIS WEEK'S BRIEF" section. Do not use outside knowledge about "how a system like this probably works."
+- If neither covers something, say plainly that you don't have that information — never guess or invent numbers, steps, thresholds or features. A wrong answer is worse than "I don't know."
+- For any specific number (a threshold, a cap, a count, a score cutoff), only use a number that appears literally in the material — e.g. a named constant in the source files, a number written in the docs, or a figure in this week's brief. Never infer a number from descriptive text (like a rubric's description of what a score "means").
+- For live data you weren't given (current feedback counts, whether a run is happening right now, older weeks' picks), say you can't see that and point to the right page.
 
 SCOPE RULES — follow strictly:
-- Only answer questions about Research Pulse itself: its pipeline, architecture, features, how to use it, the AI-research papers/terminology it covers, or Kavita's workflow with it.
-- For anything unrelated to Research Pulse or AI research — general chit-chat, unrelated coding help, personal tasks, topics with no connection to this app — politely decline and say this assistant is scoped to Research Pulse. Do not attempt to answer out-of-scope questions "to be helpful."
+- Only answer questions about Research Pulse: its briefs and picks, how it works, how to use it, the AI-research papers and terms it covers, or Kavita's workflow with it. Explaining an AI-research term or paper that appears in a brief is in scope.
+- For anything else (general chit-chat, unrelated coding, personal tasks, other topics), politely say you can only help with Research Pulse, in one sentence.
 
-TONE:
-- Keep answers concise and direct. Kavita is busy and technical — no filler, no over-explaining things a senior consultant already knows.
-
---- REFERENCE MATERIAL (Research Pulse's actual documentation — your only source of truth) ---
+--- REFERENCE MATERIAL (Research Pulse's documentation and selection code — background for answering; never quote code or file names to Kavita) ---
 
 ${corpus}`;
 
@@ -67,7 +72,32 @@ export interface AssistantResult {
 
 const MAX_HISTORY_TURNS = 12;
 
-export async function askAssistant(messages: AssistantMessage[], apiKey: string, model: string): Promise<AssistantResult> {
+/** Plain-text digest of the latest brief, appended per request so "what's in this week's
+ * brief?" gets a real answer instead of a redirect. */
+export async function loadLatestBriefContext(): Promise<string> {
+  const { listBriefs, getBriefWithItemsDetailed } = await import("./runs-repo");
+  const [latest] = await listBriefs();
+  if (!latest) return "No brief has been published yet.";
+  const detailed = await getBriefWithItemsDetailed(latest.isoWeek);
+  if (!detailed) return "No brief has been published yet.";
+
+  const lines = [
+    `Week ${latest.isoWeek} (status: ${latest.status}, ${detailed.items.length} picks, page: /brief/${latest.isoWeek}).`,
+    latest.headline ? `Headline summary: ${latest.headline}` : "",
+    ...detailed.items.map(
+      ({ item, paper, domainName }) =>
+        `- [${domainName}] "${paper.title}" — significance ${item.significance}/10, suggested action: ${item.action}. So what: ${item.soWhat} Caveat: ${item.caveat}`,
+    ),
+  ];
+  return lines.filter(Boolean).join("\n");
+}
+
+export async function askAssistant(
+  messages: AssistantMessage[],
+  apiKey: string,
+  model: string,
+  liveContext: string,
+): Promise<AssistantResult> {
   const ai = new GoogleGenAI({ apiKey });
   const recent = messages.slice(-MAX_HISTORY_TURNS);
   const contents = recent.map((m) => ({
@@ -82,7 +112,7 @@ export async function askAssistant(messages: AssistantMessage[], apiKey: string,
           model,
           contents,
           config: {
-            systemInstruction: buildSystemPrompt(),
+            systemInstruction: `${buildSystemPrompt()}\n\n--- THIS WEEK'S BRIEF (live from the database) ---\n${liveContext}`,
             temperature: 0.2,
           },
         }),

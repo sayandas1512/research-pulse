@@ -1,70 +1,124 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { listBriefs } from "@/src/lib/runs-repo";
-import { Card } from "./components/ui";
+import { getLatestBriefSummary } from "@/src/lib/runs-repo";
+import { readTimeMinutes } from "@/src/lib/render";
+import { Card, Kicker } from "./components/ui";
 import { Reveal } from "./components/motion/Reveal";
-import { PulseRings } from "./components/motion/PulseRings";
-import { Logo } from "./components/Logo";
+import { SplitHeadline } from "./components/motion/SplitHeadline";
+import { CountUp } from "./components/motion/CountUp";
+import { Magnetic } from "./components/motion/Magnetic";
+import { AmbientBackground } from "./components/motion/AmbientBackground";
 import DataFlowDemo from "./components/DataFlowDemo";
 
-async function LatestBriefCta() {
-  const briefs = await listBriefs();
-  const latest = briefs[0];
-  if (!latest) return <span className="text-sm text-[var(--muted)]">No briefs published yet — check back Monday.</span>;
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="border-l border-[var(--rule)] pl-4">
+      <CountUp value={value} className="block font-serif text-4xl leading-none text-[var(--foreground)] sm:text-5xl" />
+      <span className="mt-2 block font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--muted)]">{label}</span>
+    </div>
+  );
+}
+
+async function LatestBrief() {
+  const summary = await getLatestBriefSummary();
+  if (!summary) {
+    return (
+      <p className="mt-10 text-sm text-[var(--muted)]">No briefs published yet. The first one arrives Monday morning.</p>
+    );
+  }
+  const { brief, issueNumber } = summary;
 
   return (
     <>
-      <Link
-        href={`/brief/${latest.isoWeek}`}
-        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-gradient-to-br from-[var(--accent)] to-indigo-700 px-4 py-2.5 text-sm font-medium text-[var(--accent-foreground)] shadow-lg shadow-[var(--accent)]/25 transition-all duration-150 hover:shadow-xl hover:shadow-[var(--accent)]/35 active:scale-[0.97] sm:w-auto"
-      >
-        Read the latest brief ({latest.isoWeek})
-        <span aria-hidden>→</span>
-      </Link>
-      {briefs.length > 1 && (
-        <Link href="/archive" className="mt-3 text-sm text-[var(--muted)] hover:text-[var(--accent)] hover:underline">
-          or see all {briefs.length} past briefs
-        </Link>
+      <Reveal delay={500} className="mt-12 grid grid-cols-2 gap-6 sm:grid-cols-4">
+        <Stat value={summary.fetched} label="Papers scanned" />
+        <Stat value={summary.shortlisted} label="Shortlisted" />
+        <Stat value={summary.picked} label="Picked for you" />
+        <Stat value={summary.domains} label="Domains" />
+      </Reveal>
+
+      <Reveal delay={650} className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <Magnetic>
+          <Link
+            href={`/brief/${brief.isoWeek}`}
+            className="group inline-flex items-center gap-2 rounded-full bg-[var(--foreground)] px-6 py-3 text-sm font-medium text-[var(--background)] shadow-[0_12px_30px_-12px_rgba(0,0,0,0.45)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--accent-foreground)]"
+          >
+            Read issue № {issueNumber}
+            <span aria-hidden className="transition-transform group-hover:translate-x-1">→</span>
+          </Link>
+        </Magnetic>
+        <span className="text-sm text-[var(--muted)]">
+          {brief.isoWeek} · {readTimeMinutes(brief.wordCount)} min read ·{" "}
+          <Link href="/archive" className="underline decoration-[var(--rule)] underline-offset-4 hover:text-[var(--accent)]">
+            all past issues
+          </Link>
+        </span>
+      </Reveal>
+
+      {brief.headline && (
+        <Reveal as="figure" delay={150} className="mt-20">
+          <Kicker>This week, in one paragraph</Kicker>
+          <blockquote className="whitespace-pre-line border-l-2 border-[var(--accent)] pl-6 font-serif text-2xl leading-snug text-[var(--foreground)] sm:text-[1.7rem]">
+            {brief.headline}
+          </blockquote>
+        </Reveal>
       )}
     </>
   );
 }
 
+const STEPS = [
+  ["Scan", "Every Monday, new arXiv papers for each of your domains are pulled in, with signals from Hugging Face, Semantic Scholar and GitHub."],
+  ["Score", "Each shortlisted paper is scored 0–10 for significance to your work; only papers scoring 6 or more can make the brief."],
+  ["Distil", "The top picks become a short brief: the so-what, the caveat, and whether to read, skim or flag it for a client."],
+] as const;
+
 export default function HomePage() {
   return (
-    <main className="flex flex-1 flex-col items-center gap-8 px-6 py-16">
-      <Reveal className="w-full max-w-md">
-        <Card className="relative overflow-hidden p-8 text-center">
-          <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
-            <PulseRings />
-            <Logo size={56} animated />
-          </div>
-          <span className="mt-5 inline-block rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-medium text-[var(--accent)]">
-            Welcome back, Kavita
-          </span>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight">Research Pulse</h1>
-          <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
-            Your weekly AI-research brief, organized by domain, short enough to read in under ten
-            minutes — what matters this week, without reading every preprint yourself.
+    <main className="flex-1">
+      <section className="relative isolate overflow-hidden px-6 pb-40 pt-14 lg:px-12 lg:pt-24">
+        <AmbientBackground />
+        <div className="mx-auto max-w-4xl">
+          <Kicker>Research Pulse · Your weekly AI-research brief</Kicker>
+          <SplitHeadline className="font-serif text-6xl leading-[0.95] tracking-tight text-[var(--foreground)] sm:text-7xl lg:text-8xl">
+            Welcome back, <em className="text-[var(--accent)]">Kavita.</em>
+          </SplitHeadline>
+          <p className="mt-6 max-w-xl text-lg leading-relaxed text-[var(--muted)]">
+            What matters in AI research this week, sorted by domain and short enough to read in under ten minutes,
+            so you never have to wade through every preprint yourself.
           </p>
-          <div className="mt-6 flex flex-col items-center">
-            <Suspense fallback={<span className="text-sm text-[var(--muted)]">Loading...</span>}>
-              <LatestBriefCta />
-            </Suspense>
-          </div>
-        </Card>
-      </Reveal>
+          <Suspense fallback={<p className="mt-12 text-sm text-[var(--muted)]">Loading this week&apos;s numbers…</p>}>
+            <LatestBrief />
+          </Suspense>
+        </div>
+      </section>
 
-      <Reveal className="w-full max-w-md" delay={120}>
-        <Card className="p-6">
-          <p className="mb-1 text-sm font-semibold text-[var(--foreground)]">How it works</p>
-          <p className="mb-4 text-xs leading-relaxed text-[var(--muted)]">
-            Each week the pipeline scans new papers, scores them against Kavita&apos;s focus areas, and keeps
-            only what&apos;s worth her time.
-          </p>
-          <DataFlowDemo />
-        </Card>
-      </Reveal>
+      <section className="border-t border-[var(--rule)] px-6 py-20 lg:px-12">
+        <div className="mx-auto grid max-w-4xl items-start gap-10 md:grid-cols-[1fr_1.15fr]">
+          <Reveal>
+            <Kicker>How it works</Kicker>
+            <h2 className="font-serif text-4xl leading-[1.05] tracking-tight">
+              From hundreds of preprints to a <em>ten-minute</em> read.
+            </h2>
+            <ol className="mt-8 space-y-6">
+              {STEPS.map(([title, body], i) => (
+                <li key={title} className="flex gap-4">
+                  <span className="font-mono text-xs text-[var(--accent)]">0{i + 1}</span>
+                  <div>
+                    <p className="font-serif text-xl leading-none">{title}</p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted)]">{body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </Reveal>
+          <Reveal delay={150}>
+            <Card tilt className="p-6">
+              <DataFlowDemo />
+            </Card>
+          </Reveal>
+        </div>
+      </section>
     </main>
   );
 }

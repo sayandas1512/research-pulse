@@ -1,33 +1,48 @@
 @import "tailwindcss";
 
+/* Editorial "research journal" palette: warm paper, ink-blue accent, fine rules. */
 :root {
-  --background: #f8fafc;
-  --surface: #ffffff;
-  --surface-muted: #f1f5f9;
-  --foreground: #0f172a;
-  --muted: #64748b;
-  --border: #e2e8f0;
-  --accent: #4f46e5;
-  --accent-foreground: #ffffff;
-  --accent-soft: #eef2ff;
+  --background: #f6f2ea;
+  --surface: #fffdf8;
+  --surface-muted: #efe9de;
+  --foreground: #1b1915;
+  --muted: #6d665a;
+  --border: #e3dccd;
+  --rule: #cfc6b3;
+  --accent: #2341b5;
+  --accent-foreground: #fffdf8;
+  --accent-soft: #e6eaf8;
+  --orb-a: #c9d3fb;
+  --orb-b: #f3d9bf;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0b0f1a;
-    --surface: #111827;
-    --surface-muted: #1a2335;
-    --foreground: #f1f5f9;
-    --muted: #94a3b8;
-    --border: #273246;
-    --accent: #818cf8;
-    --accent-foreground: #0b0f1a;
-    --accent-soft: #1e2338;
+    --background: #12110e;
+    --surface: #1a1915;
+    --surface-muted: #24221d;
+    --foreground: #f2ede3;
+    --muted: #a59e90;
+    --border: #2f2c25;
+    --rule: #3d3930;
+    --accent: #93a8ff;
+    --accent-foreground: #12110e;
+    --accent-soft: #1d2238;
+    --orb-a: #1f2a5c;
+    --orb-b: #3a2a1a;
   }
 }
 
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-display);
+}
+
 body {
-  background: var(--background);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, color-mix(in srgb, var(--orb-a) 35%, transparent), transparent 60%),
+    var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }

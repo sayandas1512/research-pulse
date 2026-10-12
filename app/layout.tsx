@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import NavBar, { NavBarFallback } from "./NavBar";
@@ -15,6 +15,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const instrumentSerif = Instrument_Serif({
+  variable: "--font-display",
+  weight: "400",
+  style: ["normal", "italic"],
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "Research Pulse",
   description: "Weekly AI research brief for a senior AI-strategy consultant.",
@@ -24,13 +31,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      {/* Content on the left, navigation in a column on the right (top bar on small screens). */}
+      <body className="flex min-h-full flex-col lg:flex-row">
+        <div className="flex min-w-0 flex-1 flex-col">{children}</div>
         <Suspense fallback={<NavBarFallback />}>
           <NavBar />
         </Suspense>
-        {children}
         <ChatWidgetGate />
       </body>
     </html>

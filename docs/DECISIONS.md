@@ -388,3 +388,37 @@ exact internals" otherwise, or (b) attaching a Dify knowledge base built from th
 model's prior. Flagging this now rather than letting the assistant's confident tone imply
 authority it doesn't have — Kavita should know pipeline-internals answers from it aren't
 verified against the actual code.
+
+## 2026-10-12 — Dropped Dify; assistant now runs on the project's own Gemini key
+
+Attempted option (b) above: built a Dify knowledge base from the repo docs via Dify's dataset
+API. Embedding the documents exhausted the Sandbox workspace's shared 200-credit AI pool, which
+also covers chat calls, so the live assistant itself started failing (graceful 502, but
+non-functional). Rather than depend on a third-party free tier for a core feature, replaced it
+with `src/lib/assistant.ts`: the same Gemini key the pipeline already uses, with the docs,
+prompts and the actual selection code (`select.ts`, `scoring.ts`) injected as full context. At
+roughly a thousand lines, full context is simpler than retrieval and can't miss the relevant
+chunk. Re-asking the earlier question: the fabricated "pre-rank stage" was gone, but the model
+said papers need "≥7" (inferred from the rubric prose) when `DEFAULT_SIGNIFICANCE_THRESHOLD` is
+6 — fixed by adding the source files and a "only state numbers that appear literally" rule.
+Re-verified live: it now answers 6. `DIFY_*` env vars removed locally and in Vercel; the unused
+Dify app/dataset were left in the Dify account.
+
+## 2026-10-12 — Editorial redesign, right-hand nav, simpler assistant answers
+
+Kavita feedback (via the user): the UI looked generic, the GSAP work wasn't noticeable, nav
+should sit in a column on the right, and assistant replies read as too technical. User approved
+the specific GSAP features and the "research journal" direction before build. Notes:
+- Assistant prompt now targets a non-engineer: direct answer first, ~80 words, bullets only for
+  lists, no file/function/constant names unless asked. The widget renders bullets, bold, and
+  in-app paths (e.g. `/runs`) as links, and offers starter questions.
+- The assistant now also receives the latest brief's picks from the database per request, so
+  "what's in this week's brief?" gets a real answer instead of a redirect. If the DB is
+  unreachable it still answers from the docs.
+- Home "Picked for you" uses the brief's actual item count (after dedupe and word budget), not
+  the run's per-domain pick sum, so it matches what Kavita reads (23 vs 24 this week).
+- The "How it works" demo showed 0–100 relevance scores; changed to the real 0–10 significance
+  scale with the real cutoff of 6.
+- Two GSAP gotchas fixed: the feedback toast is portaled to `<body>` because a transformed
+  ancestor card turns `position: fixed` into card-relative; the nav indicator measures with
+  bounding rects because the Magnetic wrapper's transform becomes the link's `offsetParent`.
