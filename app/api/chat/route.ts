@@ -1,52 +1,32 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { askAssistant, type AssistantMessage } from "@/src/lib/assistant";
 
-interface ChatRequestBody {
-  query?: string;
-  conversationId?: string;
-}
+const BodySchema = z.object({
+  messages: z
+    .array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().min(1) }))
+    .min(1)
+    .max(40),
+});
 
 export async function POST(request: Request) {
-  const apiUrl = process.env.DIFY_API_URL;
-  const apiKey = process.env.DIFY_API_KEY;
-  if (!apiUrl || !apiKey) {
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+  const geminiModel = process.env.GEMINI_MODEL;
+  if (!geminiApiKey || !geminiModel) {
     return NextResponse.json({ error: "not_configured", message: "The assistant isn't set up yet." }, { status: 503 });
   }
 
-  let body: ChatRequestBody;
-  try {
-    body = await request.json();
-  } catch {
+  const json = await request.json().catch(() => null);
+  const parsed = BodySchema.safeParse(json);
+  if (!parsed.success) {
     return NextResponse.json({ error: "bad_request", message: "Malformed request." }, { status: 400 });
   }
 
-  const query = body.query?.trim();
-  if (!query) {
-    return NextResponse.json({ error: "bad_request", message: "Message is empty." }, { status: 400 });
+  const result = await askAssistant(parsed.data.messages as AssistantMessage[], geminiApiKey, geminiModel);
+  if (!result.answer) {
+    console.error("Assistant call failed", result.error);
+    return NextResponse.json({ error: "upstream_error", message: "The assistant couldn't answer that just now." }, { status: 502 });
   }
 
-  try {
-    const res = await fetch(`${apiUrl.replace(/\/$/, "")}/chat-messages`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        inputs: {},
-        query,
-        response_mode: "blocking",
-        conversation_id: body.conversationId || undefined,
-        user: "kavita",
-      }),
-    });
-
-    if (!res.ok) {
-      const detail = await res.text();
-      console.error("Dify chat-messages error", res.status, detail);
-      return NextResponse.json({ error: "upstream_error", message: "The assistant couldn't answer that just now." }, { status: 502 });
-    }
-
-    const data = await res.json();
-    return NextResponse.json({ answer: data.answer as string, conversationId: data.conversation_id as string });
-  } catch (error) {
-    console.error("Dify chat-messages request failed", error);
-    return NextResponse.json({ error: "network_error", message: "Couldn't reach the assistant." }, { status: 502 });
-  }
+  return NextResponse.json({ answer: result.answer });
 }

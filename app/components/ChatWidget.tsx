@@ -11,7 +11,6 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const conversationId = useRef<string | undefined>(undefined);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -58,20 +57,20 @@ export default function ChatWidget() {
     if (!query || sending) return;
     setInput("");
     setError(null);
-    setMessages((m) => [...m, { role: "user", text: query }]);
+    const nextMessages: Message[] = [...messages, { role: "user", text: query }];
+    setMessages(nextMessages);
     setSending(true);
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, conversationId: conversationId.current }),
+        body: JSON.stringify({ messages: nextMessages }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.message ?? "Something went wrong.");
         return;
       }
-      conversationId.current = data.conversationId;
       setMessages((m) => [...m, { role: "assistant", text: data.answer }]);
     } catch {
       setError("Couldn't reach the assistant.");
