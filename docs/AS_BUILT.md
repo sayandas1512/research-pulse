@@ -37,7 +37,7 @@ Updated at the end of each stage.
 | Addition | Status | Notes |
 |---|---|---|
 | GSAP motion system | Shipped | Replaces the CSS-keyframe animations app-wide (`app/components/motion/Reveal.tsx`, `PulseRings.tsx`, `Logo.tsx`'s glow). Respects `prefers-reduced-motion` via JS in each component. |
-| In-app assistant (Dify) | Scaffolded, not yet live | `app/api/chat/route.ts` proxies to a Dify chat app; widget (`ChatWidget.tsx`) is gated by `DIFY_API_URL`/`DIFY_API_KEY` and renders nothing until both are set. No Dify app has been created for this project yet — verified end-to-end with a placeholder key (reached Dify, got a real 401, failed gracefully). |
+| In-app assistant (Dify) | Shipped, live | `app/api/chat/route.ts` proxies to a Dify Chatbot app ("Research Pulse Assistant"); widget (`ChatWidget.tsx`) is gated by `DIFY_API_URL`/`DIFY_API_KEY`, set in Vercel production env. System prompt grounds it in the actual pipeline stages and app routes. Verified live, both locally and on the production deployment, with real questions returning accurate, route-specific answers (e.g. correctly pointing to `/export` and `/brief/[week]` for saved picks). No knowledge base attached — see `docs/DECISIONS.md` for the accuracy caveat this implies. |
 
 ## Known deviations from the brief (see `docs/DECISIONS.md` for full reasoning)
 

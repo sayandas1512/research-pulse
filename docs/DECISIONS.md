@@ -364,3 +364,27 @@ user's explicit request:
   a bare proxy, not a RAG pipeline over the brief/feedback data — grounding the assistant in
   Research Pulse's own data would mean configuring a knowledge base on Dify's side, which is
   outside this codebase's control and wasn't requested.
+
+## 2026-10-12 — Dify app created and wired up live; observed hallucination risk without a knowledge base
+
+Created the Dify Chatbot app ("Research Pulse Assistant") via the browser, with a system
+prompt describing the real pipeline stages and app routes (`/archive`, `/brief/[week]`, `/log`,
+`/export`, `/runs`, `/settings`, `/backtest`). Published it, generated an API key, and set
+`DIFY_API_URL`/`DIFY_API_KEY` in Vercel's production env. Verified live on both local dev and
+production: real questions return accurate, route-specific answers.
+
+**Caveat found during testing, not fixed**: asked "how does the pipeline decide what goes in
+the brief," the model (gpt-5, Dify's default) gave a detailed, confident answer that invented
+specifics never in the system prompt or anywhere in this codebase — a "pre-rank" stage distinct
+from the Ranker, 0-5 multi-dimension scores, a "wildcard slot" for uncertain picks. None of that
+is real; `src/lib/scoring.ts`/`select.ts` do something simpler (percentile ranking, a single
+0-10 significance score, threshold + cap). The model is filling gaps with plausible-sounding
+fabrication because nothing grounds it in the actual implementation — the system prompt
+describes the pipeline at a high level but doesn't include the scoring/selection internals, and
+no Dify knowledge base is attached. Not fixed in this session: the fix is either (a) a stricter
+system-prompt instruction to only state what's explicitly provided and say "I'm not sure of the
+exact internals" otherwise, or (b) attaching a Dify knowledge base built from this repo's
+`docs/AS_BUILT.md`/`docs/DECISIONS.md` so answers are grounded in the real build instead of the
+model's prior. Flagging this now rather than letting the assistant's confident tone imply
+authority it doesn't have — Kavita should know pipeline-internals answers from it aren't
+verified against the actual code.
