@@ -36,7 +36,9 @@ Updated at the end of each stage.
 
 - `KAVITA_EMAIL`/`ALERT_EMAIL` point at the Resend account owner's address, not the originally
   named address, due to Resend's free-tier sending restriction.
-- GitHub repo is private (user's explicit choice, overriding the brief's public default).
+- GitHub repo was private during development (user's explicit choice, overriding the brief's
+  public default); switched to public before final submission so the repo link in the submission
+  form resolves.
 - **Shared-password admin auth removed entirely** (not weakened — removed). The brief specifies
   it; the user explicitly chose to drop it so a grader can reach `/settings` and `/runs` without
   needing a password passed out of band. `/settings` and `/runs` are public in this deployment.
