@@ -59,7 +59,7 @@ export default function FeedbackButtonsClient({ urls }: { urls: Record<Kind, str
             scroll={false}
             role="status"
             aria-live="polite"
-            className={`fixed bottom-5 left-1/2 z-50 w-[min(92vw,380px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm shadow-lg lg:ml-[-8rem] ${
+            className={`fixed bottom-5 left-1/2 z-50 w-[min(92vw,380px)] -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm shadow-lg sm:ml-[-6rem] md:ml-[-7rem] lg:ml-[-8rem] ${
               toast.ok
                 ? "border-[var(--accent)]/40 bg-[var(--surface)] text-[var(--foreground)]"
                 : "border-red-300 bg-[var(--surface)] text-red-600"

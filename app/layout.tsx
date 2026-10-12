@@ -34,7 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       {/* Content on the left, navigation in a column on the right (top bar on small screens). */}
-      <body className="flex min-h-full flex-col lg:flex-row">
+      <body className="flex min-h-full flex-col sm:flex-row">
         <div className="flex min-w-0 flex-1 flex-col">{children}</div>
         <Suspense fallback={<NavBarFallback />}>
           <NavBar />

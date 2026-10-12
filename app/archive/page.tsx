@@ -19,7 +19,7 @@ async function BriefList() {
             <Card className="flex items-center justify-between gap-4">
               <div className="flex items-baseline gap-4">
                 <span className="w-12 font-mono text-xs text-[var(--muted)]">№ {briefs.length - idx}</span>
-                <span className="font-serif text-2xl leading-none text-[var(--foreground)] transition-colors group-hover:text-[var(--accent)]">
+                <span className="whitespace-nowrap font-serif text-2xl leading-none text-[var(--foreground)] transition-colors group-hover:text-[var(--accent)]">
                   {b.isoWeek}
                 </span>
               </div>

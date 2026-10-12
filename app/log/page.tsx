@@ -81,7 +81,7 @@ async function LogTable({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <Card className="overflow-x-auto !p-0">
-      <table className="w-full text-left text-sm">
+      <table className="w-full min-w-[680px] text-left text-sm">
         <thead>
           <tr className="border-b border-[var(--border)] text-xs text-[var(--muted)]">
             <th className="px-4 py-3">Week</th>

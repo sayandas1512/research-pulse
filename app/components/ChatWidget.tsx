@@ -143,8 +143,8 @@ export default function ChatWidget() {
     }
   }
 
-  // Keep clear of the right-hand navigation column on large screens.
-  const offset = "right-5 lg:right-[calc(16rem+1.5rem)]";
+  // Keep clear of the right-hand navigation column (shown from the sm breakpoint up).
+  const offset = "right-5 sm:right-[calc(12rem+1rem)] md:right-[calc(14rem+1.25rem)] lg:right-[calc(16rem+1.5rem)]";
 
   return (
     <>

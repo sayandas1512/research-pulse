@@ -31,7 +31,7 @@ function Wordmark() {
   return (
     <Link href="/" className="flex items-center gap-2.5 text-[var(--foreground)]">
       <Logo size={28} />
-      <span className="font-serif text-2xl leading-none tracking-tight">Research Pulse</span>
+      <span className="font-serif text-2xl leading-none tracking-tight sm:text-xl lg:text-2xl">Research Pulse</span>
     </Link>
   );
 }
@@ -72,44 +72,44 @@ function Sidebar({ pathname }: { pathname: string | null }) {
   }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-30 order-first border-b border-[var(--border)] bg-[var(--surface)]/85 backdrop-blur lg:order-last lg:h-screen lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-l">
-      <div className="flex h-full flex-col gap-4 px-4 py-3 lg:gap-8 lg:px-6 lg:py-8">
+    <header className="sticky top-0 z-30 order-first border-b border-[var(--border)] bg-[var(--surface)]/85 backdrop-blur sm:order-last sm:h-screen sm:w-48 md:w-56 lg:w-64 sm:shrink-0 sm:border-b-0 sm:border-l">
+      <div className="flex h-full flex-col gap-4 px-4 py-3 sm:gap-8 sm:px-4 sm:py-8 lg:px-6">
         <div className="flex items-center justify-between">
           <Wordmark />
         </div>
 
-        <nav aria-label="Main" className="relative -mx-1 overflow-x-auto [scrollbar-width:none] lg:mx-0 lg:overflow-visible">
-          <div ref={listRef} className="relative flex gap-1 px-1 lg:flex-col lg:gap-6 lg:px-0">
+        <nav aria-label="Main" className="relative -mx-1 overflow-x-auto [scrollbar-width:none] sm:mx-0 sm:overflow-visible">
+          <div ref={listRef} className="relative flex gap-1 px-1 sm:flex-col sm:gap-6 sm:px-0">
             <span
               ref={indicatorRef}
               aria-hidden
-              className="pointer-events-none invisible absolute left-0 top-0 hidden w-full rounded-lg bg-[var(--accent-soft)] lg:block"
+              className="pointer-events-none invisible absolute left-0 top-0 hidden w-full rounded-lg bg-[var(--accent-soft)] sm:block"
             >
               <span className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-[var(--accent)]" />
             </span>
             {GROUPS.map((group) => (
-              <div key={group.label} className="contents lg:block">
-                <p className="mb-2 hidden px-3 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--muted)] lg:block">
+              <div key={group.label} className="contents sm:block">
+                <p className="mb-2 hidden px-3 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--muted)] sm:block">
                   {group.label}
                 </p>
-                <ul className="contents lg:flex lg:flex-col lg:gap-0.5">
+                <ul className="contents sm:flex sm:flex-col sm:gap-0.5">
                   {group.links.map((link) => {
                     const active = isActive(pathname, link.href);
                     return (
                       <li key={link.href} className="shrink-0">
-                        <Magnetic strength={0.15} className="lg:block">
+                        <Magnetic strength={0.15} className="sm:block">
                           <Link
                             href={link.href}
                             data-active={active}
                             aria-current={active ? "page" : undefined}
-                            className={`relative z-10 block rounded-lg px-3 py-1.5 text-sm transition-colors lg:py-2 ${
+                            className={`relative z-10 block rounded-lg px-3 py-1.5 text-sm transition-colors sm:py-2 ${
                               active
-                                ? "font-medium text-[var(--accent)] max-lg:bg-[var(--accent-soft)]"
+                                ? "font-medium text-[var(--accent)] max-sm:bg-[var(--accent-soft)]"
                                 : "text-[var(--muted)] hover:text-[var(--foreground)]"
                             }`}
                           >
                             {link.label}
-                            <span className="hidden text-xs font-normal text-[var(--muted)] lg:block">{link.hint}</span>
+                            <span className="hidden text-xs font-normal text-[var(--muted)] md:block">{link.hint}</span>
                           </Link>
                         </Magnetic>
                       </li>
@@ -121,7 +121,7 @@ function Sidebar({ pathname }: { pathname: string | null }) {
           </div>
         </nav>
 
-        <div className="mt-auto hidden lg:block">
+        <div className="mt-auto hidden sm:block">
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event(OPEN_ASSISTANT_EVENT))}
