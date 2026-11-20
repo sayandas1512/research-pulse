@@ -59,7 +59,7 @@ in the `User-Agent` string, per the brief's operating rules.
 - **VERIFY confirmed the anticipated failure mode:** Resend's free tier only allows sending to
   the account owner's own verified email unless a custom domain is verified on
   resend.com/domains. Sending to the originally-requested `KAVITA_EMAIL`
-  (`sayan_das@pg27.mesaschool.co`) returned `403 validation_error`.
+  (a work address on another domain) returned `403 validation_error`.
 - **Decision (confirmed with user):** `KAVITA_EMAIL` and `ALERT_EMAIL` both set to
   `sayandas1512@gmail.com` (the Resend account owner's address) rather than switching to SMTP.
   Test send to that address succeeded (`HTTP 200`, message id returned). This keeps the mailer

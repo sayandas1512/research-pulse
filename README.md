@@ -1,6 +1,6 @@
 # Research Pulse
 
-An AI-powered weekly research monitor built for the MESA Cohort C4 "AI and its Applications" exam.
+An AI-powered weekly research monitor.
 It watches 8 (adjustable) arXiv research domains, cuts volume with cheap deterministic signals,
 judges the shortlist with one Gemini Flash call per domain, and emails a brief every Monday
 morning — short enough to read in under ten minutes — with a parallel web archive.

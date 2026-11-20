@@ -14,7 +14,7 @@ Everything below is the brief. It is written to Claude Code ("you").
 
 You are the lead engineer. Build and deploy **Research Pulse**, an AI-powered weekly research monitor that emails a brief every Monday morning and mirrors it on a web archive.
 
-This is the final examination for MESA Cohort C4, "AI and its Applications", Section 1. The problem statement:
+The problem statement:
 
 > Kavita is a senior consultant in a technology advisory practice. Her credibility depends on being genuinely current on AI/ML research: what is actually being published and validated, not press coverage. She monitors 8 to 10 technical domains (AI agents, retrieval-augmented generation, LLMs for code, computer vision for industrial applications, and others). Today she checks research repositories every morning: about 45 minutes on a quiet week, 2 hours when something significant drops, and she still misses things. Her running log of notable papers is perpetually incomplete. She wants a weekly research brief, organised by domain, delivered every Monday morning, short enough to read in under ten minutes, that surfaces the papers that seem significant this week and gives enough context on each to decide whether to read it or bring it to a client. Her domain list must be adjustable without touching the code.
 

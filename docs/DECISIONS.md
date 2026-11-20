@@ -25,7 +25,7 @@ default) — overridden per explicit user instruction.
 
 Resend free tier rejects sends to any address other than the account owner's verified email
 unless a custom domain is verified (see `docs/SPIKES.md` S5). Verifying a domain requires DNS
-control the user doesn't have handy for `pg27.mesaschool.co`. User chose to point
+control the user doesn't have handy for the recipient's domain. User chose to point
 `KAVITA_EMAIL`/`ALERT_EMAIL` at `sayandas1512@gmail.com` instead. Rejected: switching to SMTP
 adapter (brief's suggested fallback) — would need new credentials (Gmail app-password or
 similar) for no added benefit, since Resend works fine once sending to the owner's address.
